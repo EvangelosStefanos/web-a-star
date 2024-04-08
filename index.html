@@ -1,360 +1,345 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <title>Web A star</title>
-    </head>
-    <body>
-        <canvas id="canvas"></canvas>
-				<ul>
-					<li>The <span class="green">Initial</span> state is <span class="green">Green</span></li>
-					<li>The <span class="red">Goal</span> state is <span class="red">Red</span></li>
-					<li>States in the <span class="blue">Search Frontier</span> are <span class="blue">Blue</span></li>
-					<li>States in the <span class="grey">Closed Set</span> are <span class="grey">Grey</span></li>
-					<li><span class="black">Blocked</span> states are <span class="black">Black</span></li>
-				</ul>
-    </body>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Web A star</title>
+  </head>
+  <body class="w-100 h-100 overflow-auto">
+    <div class="min-w-fit flex flex-col justify-start items-center xl:flex-row xl:justify-center">
+      <canvas id="canvas"></canvas>
+      <div class="m-2"></div>
+      <ul>
+        <li>The <span class="green">Initial</span> state is <span class="green">Green</span></li>
+        <li>The <span class="red">Goal</span> state is <span class="red">Red</span></li>
+        <li>States in the <span class="blue">Search Frontier</span> are <span class="blue">Blue</span></li>
+        <li>States in the <span class="grey">Closed Set</span> are <span class="grey">Grey</span></li>
+        <li><span class="black">Blocked</span> states are <span class="black">Black</span></li>
+      </ul>
+    </div>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </body>
 </html>
 <style>
-	html, body {
-		height: 100%;
-		margin: 0;
-	}
-	canvas{
-		display: inline-block;
-		width: 800px;
-		height: 800px;
-	}
-	ul{
-		display: inline-block;
-		vertical-align: top;
-		list-style-type: square;
-		font-size: x-large;
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+  canvas{
+    display: inline-block;
+    width: 730px;
+    height: 730px;
+  }
+  ul{
+    display: inline-block;
+    list-style-type: square;
+    font-size: x-large;
     padding: 20px 40px;
     border: 2px dashed black;
-	}
-	.green{
-		color: green;
-		font-weight: bold;
-	}
-	.red{
-		color: red;
-		font-weight: bold;
-	}
-	.blue{
-		color: blue;
-		font-weight: bold;
-	}
-	.grey{
-		color: grey;
-		font-weight: bold;
-	}
-	.black{
-		color: black;
-		font-weight: bold;
-	}
+  }
+  .green{
+    color: green;
+    font-weight: bold;
+  }
+  .red{
+    color: red;
+    font-weight: bold;
+  }
+  .blue{
+    color: blue;
+    font-weight: bold;
+  }
+  .grey{
+    color: grey;
+    font-weight: bold;
+  }
+  .black{
+    color: black;
+    font-weight: bold;
+  }
 </style>
 <script>
-	WIDTH = 9;
-	HEIGHT = 9;
-	colors = [];
-	for(w=0; w<WIDTH; w++){
-		colors.push([]);
-		for(h=0; h<HEIGHT; h++){
-			colors[w][h] = "white";
-		}
-	}
-	//// State
-	function newState(x, y){
-		free = [];
-		for(w=0; w<WIDTH; w++){
-			free.push([]);
-			for(h=0; h<HEIGHT; h++){
-				free[w][h] = true;
-			}
-		}
-		return {
-			x: x,
-			y: y,
-			free: free,
-			path: [],
-			heuristic: Number.POSITIVE_INFINITY,
-		}
-	}
-	function cloneState(state){
-		clone = newState(0, 0);
-		clone.x = state.x;
-		clone.y = state.y;
-		clone.free = Array.from(state.free);
-		clone.path = Array.from(state.path);
-		clone.heuristic = state.heuristic;
-		return clone;
-	}
-	function equals(state, other){
-		return state.x == other.x && state.y == other.y;
-	}
-	function print_path(state){
-		console.log(state.path.join("->"));
-	}
-	function convert_path(path){
-		SIDE = 80;
-		centers.push({x: 2.5*SIDE+5, y: 2.5*SIDE+5}); // Initial state
-		for(i=0; i<path.length; i++){
-			if(path[i] == "Up"){
-				centers.push({x: centers[i].x, y: centers[i].y-SIDE})
-			}
-			else if(path[i] == "Down"){
-				centers.push({x: centers[i].x, y: centers[i].y+SIDE})
-			}
-			else if(path[i] == "Left"){
-				centers.push({x: centers[i].x-SIDE, y: centers[i].y})
-			}
-			else if(path[i] == "Right"){
-				centers.push({x: centers[i].x+SIDE, y: centers[i].y})
-			}
-		}
-	}
-	//// Actions
-	function goUp(parent){
-		child = cloneState(parent);
-		isValid = false;
-		if(parent.y > 0 && parent.free[parent.x][parent.y-1] ){
-			child.y -= 1;
-			child.path.push("Up");
-			isValid = true;
-		}
-		return {
-			isValid: isValid,
-			child: child,
-		}
-	}
-	function goDown(parent){
-		child = cloneState(parent);
-		isValid = false;
-		if(parent.y < HEIGHT-1 && parent.free[parent.x][parent.y+1] ){
-			child.y += 1;
-			child.path.push("Down");
-			isValid = true;
-		}
-		return {
-			isValid: isValid,
-			child: child,
-		}
-	}
-	function goLeft(parent){
-		child = cloneState(parent);
-		isValid = false;
-		if(parent.x > 0 && parent.free[parent.x-1][parent.y] ){
-			child.x -= 1;
-			child.path.push("Left");
-			isValid = true;
-		}
-		return {
-			isValid: isValid,
-			child: child,
-		}
-	}
-	function goRight(parent){
-		child = cloneState(parent);
-		isValid = false;
-		if(parent.x < WIDTH-1 && parent.free[parent.x+1][parent.y] ){
-			child.x += 1;
-			child.path.push("Right");
-			isValid = true;
-		}
-		return {
-			isValid: isValid,
-			child: child,
-		}
-	}
-	//// Expand and Heuristic
-	function expand(parent){
-		actions = [
-			goUp(parent),
-			goDown(parent),
-			goLeft(parent),
-			goRight(parent)
-		];
-		children = [];
-		for(i=0; i<actions.length; i++){
-			if(actions[i].isValid){
-				children.push(actions[i].child);
-			}
-		}
-		return children;
-	}
-	function evaluate(state, goal) {
-		state.heuristic = Math.abs(state.x - goal.x) + Math.abs(state.y - goal.y);
-	}
-	/* if < 0 then state > other
-	 * if > 0 then state < other
-	*/
-	function compare(state, other){
-		return other.heuristic - state.heuristic; // descending order so i can use pop() to extract minimum
-	}
-	function sorted_push(array, item){
-		array.push(item);
-		array.sort(compare);
-	}
-	function includes(array, state){
-		return array.filter(x => equals(x, state)).length > 0;
-	}
-	function hasBetter(array, state){
-		return array
-			.filter(x => equals(x, state))
-			.filter(x => compare(x, state) >= 0)
-			.length > 0;
-	}
+  WIDTH = 9;
+  HEIGHT = 9;
+  colors = [];
+  for(w=0; w<WIDTH; w++){
+    colors.push([]);
+    for(h=0; h<HEIGHT; h++){
+      colors[w][h] = "white";
+    }
+  }
+  //// State
+  function newState(x, y){
+    free = [];
+    for(w=0; w<WIDTH; w++){
+      free.push([]);
+      for(h=0; h<HEIGHT; h++){
+        free[w][h] = true;
+      }
+    }
+    return {
+      x: x,
+      y: y,
+      free: free,
+      path: [],
+      heuristic: Number.POSITIVE_INFINITY,
+    }
+  }
+  function cloneState(state){
+    clone = newState(0, 0);
+    clone.x = state.x;
+    clone.y = state.y;
+    clone.free = Array.from(state.free);
+    clone.path = Array.from(state.path);
+    clone.heuristic = state.heuristic;
+    return clone;
+  }
+  function equals(state, other){
+    return state.x == other.x && state.y == other.y;
+  }
+  function print_path(state){
+    console.log(state.path.join("->"));
+  }
+  function convert_path(path){
+    SIDE = 80;
+    centers.push({x: 2.5*SIDE+5, y: 2.5*SIDE+5}); // (Initial state coordinates (2) + offset to center (0.5)) * side (80) + initial margin (5)
+    for(i=0; i<path.length; i++){
+      if(path[i] == "Up"){
+        centers.push({x: centers[i].x, y: centers[i].y-SIDE})
+      }
+      else if(path[i] == "Down"){
+        centers.push({x: centers[i].x, y: centers[i].y+SIDE})
+      }
+      else if(path[i] == "Left"){
+        centers.push({x: centers[i].x-SIDE, y: centers[i].y})
+      }
+      else if(path[i] == "Right"){
+        centers.push({x: centers[i].x+SIDE, y: centers[i].y})
+      }
+    }
+  }
+  //// Actions
+  function goUp(parent){
+    child = cloneState(parent);
+    isValid = false;
+    if(parent.y > 0 && parent.free[parent.x][parent.y-1] ){
+      child.y -= 1;
+      child.path.push("Up");
+      isValid = true;
+    }
+    return {
+      isValid: isValid,
+      child: child,
+    }
+  }
+  function goDown(parent){
+    child = cloneState(parent);
+    isValid = false;
+    if(parent.y < HEIGHT-1 && parent.free[parent.x][parent.y+1] ){
+      child.y += 1;
+      child.path.push("Down");
+      isValid = true;
+    }
+    return {
+      isValid: isValid,
+      child: child,
+    }
+  }
+  function goLeft(parent){
+    child = cloneState(parent);
+    isValid = false;
+    if(parent.x > 0 && parent.free[parent.x-1][parent.y] ){
+      child.x -= 1;
+      child.path.push("Left");
+      isValid = true;
+    }
+    return {
+      isValid: isValid,
+      child: child,
+    }
+  }
+  function goRight(parent){
+    child = cloneState(parent);
+    isValid = false;
+    if(parent.x < WIDTH-1 && parent.free[parent.x+1][parent.y] ){
+      child.x += 1;
+      child.path.push("Right");
+      isValid = true;
+    }
+    return {
+      isValid: isValid,
+      child: child,
+    }
+  }
+  //// Expand and Heuristic
+  function expand(parent){
+    actions = [
+      goUp(parent),
+      goDown(parent),
+      goLeft(parent),
+      goRight(parent)
+    ];
+    children = [];
+    for(i=0; i<actions.length; i++){
+      if(actions[i].isValid){
+        children.push(actions[i].child);
+      }
+    }
+    return children;
+  }
+  function evaluate(state, goal) {
+    state.heuristic = Math.abs(state.x - goal.x) + Math.abs(state.y - goal.y);
+  }
+  /* if < 0 then state > other
+   * if > 0 then state < other
+  */
+  function compare(state, other){
+    return other.heuristic - state.heuristic; // descending order so i can use pop() to extract minimum
+  }
+  function sorted_push(array, item){
+    array.push(item);
+    array.sort(compare);
+  }
+  function includes(array, state){
+    return array.filter(x => equals(x, state)).length > 0;
+  }
+  function hasBetter(array, state){
+    return array
+      .filter(x => equals(x, state))
+      .filter(x => compare(x, state) >= 0)
+      .length > 0;
+  }
 
-	initial = newState(2,2);
-	initial.free[6][2] = false;
-	initial.free[5][3] = false;
-	initial.free[6][3] = false;
-	initial.free[7][4] = false;
-	initial.free[5][5] = false;
-	initial.free[6][5] = false;
-	initial.free[5][6] = false;
-	initial.free[2][7] = false;
-	initial.free[3][7] = false;
-	initial.free[4][7] = false;
-	initial.free[5][7] = false;
-	goal = newState(7,8);
-	
-	colors[2][2] = "green";
-	colors[6][2] = "black";
-	colors[5][3] = "black";
-	colors[6][3] = "black";
-	colors[7][4] = "black";
-	colors[5][5] = "black";
-	colors[6][5] = "black";
-	colors[5][6] = "black";
-	colors[2][7] = "black";
-	colors[3][7] = "black";
-	colors[4][7] = "black";
-	colors[5][7] = "black";
-	colors[7][8] = "red";
+  initial = newState(2,2);
+  initial.free[6][2] = false;
+  initial.free[5][3] = false;
+  initial.free[6][3] = false;
+  initial.free[7][4] = false;
+  initial.free[5][5] = false;
+  initial.free[6][5] = false;
+  initial.free[5][6] = false;
+  initial.free[2][7] = false;
+  initial.free[3][7] = false;
+  initial.free[4][7] = false;
+  initial.free[5][7] = false;
+  goal = newState(7,8);
+  
+  colors[2][2] = "green";
+  colors[6][2] = "black";
+  colors[5][3] = "black";
+  colors[6][3] = "black";
+  colors[7][4] = "black";
+  colors[5][5] = "black";
+  colors[6][5] = "black";
+  colors[5][6] = "black";
+  colors[2][7] = "black";
+  colors[3][7] = "black";
+  colors[4][7] = "black";
+  colors[5][7] = "black";
+  colors[7][8] = "red";
 
-	closed_set = [];
-	search_frontier = [];
-	sorted_push(search_frontier, initial);
-	done = false;
-	centers = [];
-	
-	function simple_a_star_step(){
-		if(done || search_frontier.length <= 0){
-			done = true;
-			return done;
-		}
-		// if(search_frontier.length > 0) { // if there are states in the search frontier
-		//static int k = 0; // These 3 lines print how many iterations the algorithm does.
-		//k++;
-		//cout << "Loops Began :" << k <<endl;
+  closed_set = [];
+  search_frontier = [];
+  sorted_push(search_frontier, initial);
+  done = false;
+  centers = [];
+  
+  function simple_a_star_step(){
+    if(done || search_frontier.length <= 0){
+      done = true;
+      return done;
+    }
+    // if(search_frontier.length > 0) { // if there are states in the search frontier
+    //static int k = 0; // These 3 lines print how many iterations the algorithm does.
+    //k++;
+    //cout << "Loops Began :" << k <<endl;
 
-		state = search_frontier.pop(); // Acquire the best state from the search frontier
+    state = search_frontier.pop(); // Acquire the best state from the search frontier
 
-		if(includes(closed_set, state)){
-			return done; // If state has already been visited continue the next iteration
-		}
-		
-		if(equals(state, goal)){ //If state is final, print the path and exit
-			print_path(state);
-			convert_path(state.path);
-			done = true;
-			window.requestAnimationFrame(render);
-			return done;
-		}
-		
-		children = expand(state);
-		for(i=0; i<children.length; i++){ // Evaluate all children and add them to the search frontier
-			evaluate(children[i], goal);
-			if(hasBetter(search_frontier, children[i])){
-				continue; // if child already in search_frontier with a better heuristic then skip
-			}
-			if(hasBetter(closed_set, children[i])){
-				continue; // if child already in closed_set with a better heuristic then skip
-			}
-			sorted_push(search_frontier, children[i]);
-			if(colors[children[i].x][children[i].y] == "white"){
-				colors[children[i].x][children[i].y] = "blue";
-			}
-		}
-		
-		closed_set.push(state); // Add parent state to the closed set
-		if(colors[state.x][state.y] == "blue"){
-			colors[state.x][state.y] = "grey";
-		}
-		window.requestAnimationFrame(render);
-		return done;
-	}
-	setInterval(simple_a_star_step, 500);
-	//// Render
-	function clamp(min, max, value) {
-		return Math.min(Math.max(value, min), max);
-	};
-	timeout = 0;
-	previous = 0;
-	time_start = undefined;
-	function render(time) {
-		const canvas = document.querySelector("#canvas");
-		canvas.width=800;
-		canvas.height=800;
-		const gl = canvas.getContext("2d");
-		gl.lineWidth = 5;
-		gl.strokeStyle = "black";
-		SIDE = 80;
-		MARGIN = 5;
-		OFFSET = 10;
-		for(i=0; i<WIDTH; i++){
-			for(j=0; j<HEIGHT; j++){
-				gl.strokeRect(i*SIDE+MARGIN, j*SIDE+MARGIN, SIDE, SIDE);
-				gl.fillStyle = colors[i][j]; // logic.getColor(i, j);
-				gl.fillRect(i*SIDE+MARGIN+OFFSET, j*SIDE+MARGIN+OFFSET, SIDE-2*OFFSET, SIDE-2*OFFSET);  
-			}
-		}
-		// animation start
-		TIME_PER_SEGMENT = 500;
-		if(done && time_start == undefined){
-			time_start = time;
-		}
-		time_elapsed = time - time_start;
-		if(done){
+    if(includes(closed_set, state)){
+      return done; // If state has already been visited continue the next iteration
+    }
+    
+    if(equals(state, goal)){ //If state is final, print the path and exit
+      print_path(state);
+      convert_path(state.path);
+      done = true;
+      window.requestAnimationFrame(render);
+      return done;
+    }
+    
+    children = expand(state);
+    for(i=0; i<children.length; i++){ // Evaluate all children and add them to the search frontier
+      evaluate(children[i], goal);
+      if(hasBetter(search_frontier, children[i])){
+        continue; // if child already in search_frontier with a better heuristic then skip
+      }
+      if(hasBetter(closed_set, children[i])){
+        continue; // if child already in closed_set with a better heuristic then skip
+      }
+      sorted_push(search_frontier, children[i]);
+      if(colors[children[i].x][children[i].y] == "white"){
+        colors[children[i].x][children[i].y] = "blue";
+      }
+    }
+    
+    closed_set.push(state); // Add parent state to the closed set
+    if(colors[state.x][state.y] == "blue"){
+      colors[state.x][state.y] = "grey";
+    }
+    window.requestAnimationFrame(render);
+    return done;
+  }
+  setInterval(simple_a_star_step, 500);
+  //// Render
+  function clamp(min, max, value) {
+    return Math.min(Math.max(value, min), max);
+  };
+  timeout = 0;
+  previous = 0;
+  time_start = undefined;
+  function render(time) {
+    const canvas = document.querySelector("#canvas");
+    canvas.width=730;
+    canvas.height=730;
+    const gl = canvas.getContext("2d");
+    gl.lineWidth = 5;
+    gl.strokeStyle = "black";
+    SIDE = 80;
+    MARGIN = 5;
+    OFFSET = 10;
+    for(i=0; i<WIDTH; i++){
+      for(j=0; j<HEIGHT; j++){
+        gl.strokeRect(i*SIDE+MARGIN, j*SIDE+MARGIN, SIDE, SIDE);
+        gl.fillStyle = colors[i][j];
+        gl.fillRect(i*SIDE+MARGIN+OFFSET, j*SIDE+MARGIN+OFFSET, SIDE-2*OFFSET, SIDE-2*OFFSET);  
+      }
+    }
+    // animation start
+    TIME_PER_SEGMENT = 500;
+    if(done && time_start == undefined){
+      time_start = time;
+    }
+    time_elapsed = time - time_start;
+    if(done){
       gl.moveTo(centers[0].x, centers[0].y);
-			for(i=0; i<centers.length-1; i++){
-				dx = centers[i+1].x - centers[i].x;
-				dy = centers[i+1].y - centers[i].y;
-				progress = clamp(-1, TIME_PER_SEGMENT, time_elapsed - i * TIME_PER_SEGMENT) / TIME_PER_SEGMENT;
-				if(progress <= 0){
-					break;
-				}
-				// render line segment
-				gl.lineTo(centers[i].x + progress * dx, centers[i].y + progress * dy);
-			}
+      for(i=0; i<centers.length-1; i++){
+        dx = centers[i+1].x - centers[i].x;
+        dy = centers[i+1].y - centers[i].y;
+        progress = clamp(-1, TIME_PER_SEGMENT, time_elapsed - i * TIME_PER_SEGMENT) / TIME_PER_SEGMENT;
+        if(progress <= 0){
+          break;
+        }
+        // draw line segment
+        gl.lineTo(centers[i].x + progress * dx, centers[i].y + progress * dy);
+      }
       gl.stroke();
-			window.requestAnimationFrame(render);
-			// stop animation when time_elapsed == TIME_PER_SEGMENT * points.length
-		}
-		/*
-		if(timeout > 0){
-			// no logic step here just render the previous logic state
-			// console.log(timeout, time, previous, timeout - time + previous);
-			timeout = timeout - time + previous;
-			window.requestAnimationFrame(render);
-		}
-		
-		else{
-			if(timeout <= 0){
-				timeout = 1000;
-			}
-			//simple_a_star_step();
-			/*
-			if not done
-				settimeout step
-				request animation
-			*/
-			//window.requestAnimationFrame(render);
-		//}
-		previous = time;
-	}
-	window.requestAnimationFrame(render);
+      window.requestAnimationFrame(render);
+      // stop animation when time_elapsed == TIME_PER_SEGMENT * points.length
+    }
+    previous = time;
+  }
+  window.requestAnimationFrame(render);
 </script>
 
 <!--
@@ -412,26 +397,26 @@ red ... blue
 color = f(distance)
 
 function getColor(state goal, state current, color min=blue, color max=red){
-	d = distance(goal, current)
-	distance = 0 > color = red
-	distance = 1 > color = less red
-	distance = 2 > color = even less red
-	distance = 3 > color = light blue
-	distance = 4 > color = blue
-	distance = 5 > color = blue
-	distance = 6 > color = blue
+  d = distance(goal, current)
+  distance = 0 > color = red
+  distance = 1 > color = less red
+  distance = 2 > color = even less red
+  distance = 3 > color = light blue
+  distance = 4 > color = blue
+  distance = 5 > color = blue
+  distance = 6 > color = blue
 }
 
 WIDTH
 HEIGHT
 for r in rows
-	for c in cols:
-		setcolor(getColor(r,c))
-		drawRect(
-			r * HEIGHT, c * WIDTH,
-			WIDTH, HEIGHT
-		)
-	
+  for c in cols:
+    setcolor(getColor(r,c))
+    drawRect(
+      r * HEIGHT, c * WIDTH,
+      WIDTH, HEIGHT
+    )
+  
 0,0>0,5>0,10
 
 path animation
@@ -449,15 +434,15 @@ y = 45*(y+1)
 animation start
 time_per_segment = 1
 for i=0, i < logic.getPointsLength(), i++
-	start = logic.getPoint(i)
-	dest = logic.getPoint(i+1)
-	diff = dest - start
-	90-45=45
-	90-45*.25 = 90-11.25 = 79
-	progress = clamp(0, time_per_segment, time_elapsed - i * time_per_segment) / time_per_segment;
-	if progress <= 0 then break
-	// render line segment
-	lineTo(start.x + progress * diff.x, start.y + progress * diff.y)
+  start = logic.getPoint(i)
+  dest = logic.getPoint(i+1)
+  diff = dest - start
+  90-45=45
+  90-45*.25 = 90-11.25 = 79
+  progress = clamp(0, time_per_segment, time_elapsed - i * time_per_segment) / time_per_segment;
+  if progress <= 0 then break
+  // render line segment
+  lineTo(start.x + progress * diff.x, start.y + progress * diff.y)
 stop animation when time_elapsed == time_per_segment * points.length
 
 t = 0 render line from p_0->p_1
