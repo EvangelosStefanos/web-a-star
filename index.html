@@ -6,16 +6,19 @@
     <title>Web A star</title>
   </head>
   <body class="w-100 h-100 overflow-auto">
-    <div class="min-w-fit flex flex-col justify-start items-center xl:flex-row xl:justify-center">
+    <div class="min-w-fit flex flex-col-reverse justify-start items-center xl:flex-row xl:justify-center">
       <canvas id="canvas"></canvas>
       <div class="m-2"></div>
-      <ul>
-        <li>The <span class="green">Initial</span> state is <span class="green">Green</span></li>
-        <li>The <span class="red">Goal</span> state is <span class="red">Red</span></li>
-        <li>States in the <span class="blue">Search Frontier</span> are <span class="blue">Blue</span></li>
-        <li>States in the <span class="grey">Closed Set</span> are <span class="grey">Grey</span></li>
-        <li><span class="black">Blocked</span> states are <span class="black">Black</span></li>
-      </ul>
+      <div class="flex flex-col items-center">
+        <ul>
+          <li>The <span class="green">Initial</span> state is <span class="green">Green</span></li>
+          <li>The <span class="red">Goal</span> state is <span class="red">Red</span></li>
+          <li>States in the <span class="blue">Search Frontier</span> are <span class="blue">Blue</span></li>
+          <li>States in the <span class="grey">Closed Set</span> are <span class="grey">Grey</span></li>
+          <li><span class="black">Blocked</span> states are <span class="black">Black</span></li>
+        </ul>
+        <button onclick="start()" id="start" class="m-4 h-10 w-20 disabled:outline-none disabled:grayscale hover:outline outline-blue-500 hover:shadow-blue-500/50 bg-blue-500/50 text-white rounded-md" type="button">Start</button> <!-- 1.[Set the start flag] 2.[Dynamically bind the disable attribute when start flag is true] -->
+      </div>
     </div>
     <script src="https://cdn.tailwindcss.com"></script>
   </body>
@@ -31,7 +34,6 @@
     height: 730px;
   }
   ul{
-    display: inline-block;
     list-style-type: square;
     font-size: x-large;
     padding: 20px 40px;
@@ -59,21 +61,37 @@
   }
 </style>
 <script>
-  WIDTH = 9;
-  HEIGHT = 9;
-  colors = [];
-  for(w=0; w<WIDTH; w++){
-    colors.push([]);
-    for(h=0; h<HEIGHT; h++){
-      colors[w][h] = "white";
+  globals = {
+    WIDTH: 9,
+    HEIGHT: 9,
+    data: {},
+    iId: 0,
+  }
+  globals.data.colors = createColors(); // needed for rendering
+  function start(){
+    document.querySelector("#start").setAttribute("disabled", "");
+    globals.data = init();
+    globals.iId = setInterval(simple_a_star_step, 500, globals.data);
+  }
+  function createColors2(width, height){
+    colors = [];    
+    for (w = 0; w < width; w++) {
+      colors.push([]);
+      for (h = 0; h < height; h++) {
+        colors[w][h] = "white";
+      }
     }
+    return colors;
+  }
+  function createColors(){
+    return createColors2(globals.WIDTH, globals.HEIGHT);
   }
   //// State
   function newState(x, y){
     free = [];
-    for(w=0; w<WIDTH; w++){
+    for(w=0; w<globals.WIDTH; w++){
       free.push([]);
-      for(h=0; h<HEIGHT; h++){
+      for(h=0; h<globals.HEIGHT; h++){
         free[w][h] = true;
       }
     }
@@ -100,22 +118,27 @@
   function print_path(state){
     console.log(state.path.join("->"));
   }
-  function convert_path(path){
-    SIDE = 80;
-    centers.push({x: 2.5*SIDE+5, y: 2.5*SIDE+5}); // (Initial state coordinates (2) + offset to center (0.5)) * side (80) + initial margin (5)
-    for(i=0; i<path.length; i++){
-      if(path[i] == "Up"){
-        centers.push({x: centers[i].x, y: centers[i].y-SIDE})
+  function convert_path(path, centers, colors) {
+    var x = 2; // initial state
+    var y = 2;
+    centers.push({x: x, y: y, distance: 0});
+    for (i = 0; i < path.length; i++) {
+      if (path[i] == "Up") {
+        y -= 1;
       }
-      else if(path[i] == "Down"){
-        centers.push({x: centers[i].x, y: centers[i].y+SIDE})
+      else if (path[i] == "Down") {
+        y += 1;
       }
-      else if(path[i] == "Left"){
-        centers.push({x: centers[i].x-SIDE, y: centers[i].y})
+      else if (path[i] == "Left") {
+        x -= 1;
       }
-      else if(path[i] == "Right"){
-        centers.push({x: centers[i].x+SIDE, y: centers[i].y})
+      else if (path[i] == "Right") {
+        x += 1;
       }
+      else{
+        console.log("Error. Should never happen. Invalid value in path.");
+      }
+      centers.push({x: x, y: y, distance: i+1});
     }
   }
   //// Actions
@@ -135,7 +158,7 @@
   function goDown(parent){
     child = cloneState(parent);
     isValid = false;
-    if(parent.y < HEIGHT-1 && parent.free[parent.x][parent.y+1] ){
+    if(parent.y < globals.HEIGHT-1 && parent.free[parent.x][parent.y+1] ){
       child.y += 1;
       child.path.push("Down");
       isValid = true;
@@ -161,7 +184,7 @@
   function goRight(parent){
     child = cloneState(parent);
     isValid = false;
-    if(parent.x < WIDTH-1 && parent.free[parent.x+1][parent.y] ){
+    if(parent.x < globals.WIDTH-1 && parent.free[parent.x+1][parent.y] ){
       child.x += 1;
       child.path.push("Right");
       isValid = true;
@@ -179,13 +202,7 @@
       goLeft(parent),
       goRight(parent)
     ];
-    children = [];
-    for(i=0; i<actions.length; i++){
-      if(actions[i].isValid){
-        children.push(actions[i].child);
-      }
-    }
-    return children;
+    return actions.filter(x => x.isValid).map(x => x.child);
   }
   function evaluate(state, goal) {
     state.heuristic = Math.abs(state.x - goal.x) + Math.abs(state.y - goal.y);
@@ -209,92 +226,118 @@
       .filter(x => compare(x, state) >= 0)
       .length > 0;
   }
+  function init(){
+    initial = newState(2, 2);
+    initial.free[6][2] = false;
+    initial.free[5][3] = false;
+    initial.free[6][3] = false;
+    initial.free[7][4] = false;
+    initial.free[5][5] = false;
+    initial.free[6][5] = false;
+    initial.free[5][6] = false;
+    initial.free[2][7] = false;
+    initial.free[3][7] = false;
+    initial.free[4][7] = false;
+    initial.free[5][7] = false;
+    goal = newState(7, 8);
 
-  initial = newState(2,2);
-  initial.free[6][2] = false;
-  initial.free[5][3] = false;
-  initial.free[6][3] = false;
-  initial.free[7][4] = false;
-  initial.free[5][5] = false;
-  initial.free[6][5] = false;
-  initial.free[5][6] = false;
-  initial.free[2][7] = false;
-  initial.free[3][7] = false;
-  initial.free[4][7] = false;
-  initial.free[5][7] = false;
-  goal = newState(7,8);
-  
-  colors[2][2] = "green";
-  colors[6][2] = "black";
-  colors[5][3] = "black";
-  colors[6][3] = "black";
-  colors[7][4] = "black";
-  colors[5][5] = "black";
-  colors[6][5] = "black";
-  colors[5][6] = "black";
-  colors[2][7] = "black";
-  colors[3][7] = "black";
-  colors[4][7] = "black";
-  colors[5][7] = "black";
-  colors[7][8] = "red";
+    colors = createColors();
+    colors[2][2] = "green";
+    colors[6][2] = "black";
+    colors[5][3] = "black";
+    colors[6][3] = "black";
+    colors[7][4] = "black";
+    colors[5][5] = "black";
+    colors[6][5] = "black";
+    colors[5][6] = "black";
+    colors[2][7] = "black";
+    colors[3][7] = "black";
+    colors[4][7] = "black";
+    colors[5][7] = "black";
+    colors[7][8] = "red";
 
-  closed_set = [];
-  search_frontier = [];
-  sorted_push(search_frontier, initial);
-  done = false;
-  centers = [];
+    closed_set = [];
+    search_frontier = [];
+    sorted_push(search_frontier, initial);
+    done = false;
+    centers = [];
+    return {
+      initial: initial,
+      goal: goal,
+      colors: colors,
+      closed_set: closed_set,
+      search_frontier: search_frontier,
+      done: done,
+      centers: centers,
+    }
+  }
   
-  function simple_a_star_step(){
-    if(done || search_frontier.length <= 0){
-      done = true;
-      return done;
+  function simple_a_star_step(data){
+    if(data.done || data.search_frontier.length <= 0){
+      clearInterval(globals.iId);
+      data.done = true;
+      return data.done;
     }
     // if(search_frontier.length > 0) { // if there are states in the search frontier
     //static int k = 0; // These 3 lines print how many iterations the algorithm does.
     //k++;
     //cout << "Loops Began :" << k <<endl;
 
-    state = search_frontier.pop(); // Acquire the best state from the search frontier
+    state = data.search_frontier.pop(); // Acquire the best state from the search frontier
 
-    if(includes(closed_set, state)){
-      return done; // If state has already been visited continue the next iteration
+    if(includes(data.closed_set, state)){
+      return data.done; // If state has already been visited continue the next iteration
     }
     
-    if(equals(state, goal)){ //If state is final, print the path and exit
+    if(equals(state, data.goal)){ //If state is final, print the path and exit
       print_path(state);
-      convert_path(state.path);
-      done = true;
+      convert_path(state.path, data.centers, data.colors);
       window.requestAnimationFrame(render);
-      return done;
+      data.done = true;
+      return data.done;
     }
     
     children = expand(state);
     for(i=0; i<children.length; i++){ // Evaluate all children and add them to the search frontier
-      evaluate(children[i], goal);
-      if(hasBetter(search_frontier, children[i])){
+      evaluate(children[i], data.goal);
+      if(hasBetter(data.search_frontier, children[i])){
         continue; // if child already in search_frontier with a better heuristic then skip
       }
-      if(hasBetter(closed_set, children[i])){
+      if(hasBetter(data.closed_set, children[i])){
         continue; // if child already in closed_set with a better heuristic then skip
       }
-      sorted_push(search_frontier, children[i]);
-      if(colors[children[i].x][children[i].y] == "white"){
-        colors[children[i].x][children[i].y] = "blue";
+      sorted_push(data.search_frontier, children[i]);
+      if(data.colors[children[i].x][children[i].y] == "white"){
+        data.colors[children[i].x][children[i].y] = "blue";
       }
     }
     
-    closed_set.push(state); // Add parent state to the closed set
-    if(colors[state.x][state.y] == "blue"){
-      colors[state.x][state.y] = "grey";
+    data.closed_set.push(state); // Add parent state to the closed set
+    if(data.colors[state.x][state.y] == "blue"){
+      data.colors[state.x][state.y] = "grey";
     }
     window.requestAnimationFrame(render);
-    return done;
+    return data.done;
   }
-  setInterval(simple_a_star_step, 500);
   //// Render
   function clamp(min, max, value) {
     return Math.min(Math.max(value, min), max);
   };
+  function lerp3(startColor, endColor, percentFade){
+    var diffRed = endColor.red - startColor.red;
+    var diffGreen = endColor.green - startColor.green;
+    var diffBlue = endColor.blue - startColor.blue;
+
+    return {
+      red: (diffRed * percentFade) + startColor.red,
+      green: (diffGreen * percentFade) + startColor.green,
+      blue: (diffBlue * percentFade) + startColor.blue,
+    }
+  }
+  function lerp1(percentFade){
+    point = lerp3({ red: 0, green: 255, blue: 0 }, { red: 255, green: 0, blue: 0 }, percentFade);
+    return "rgb("+point.red+", "+point.green+", "+point.blue+")";
+  }
   timeout = 0;
   previous = 0;
   time_start = undefined;
@@ -308,36 +351,49 @@
     SIDE = 80;
     MARGIN = 5;
     OFFSET = 10;
-    for(i=0; i<WIDTH; i++){
-      for(j=0; j<HEIGHT; j++){
+    for(i=0; i<globals.WIDTH; i++){
+      for(j=0; j<globals.HEIGHT; j++){
         gl.strokeRect(i*SIDE+MARGIN, j*SIDE+MARGIN, SIDE, SIDE);
-        gl.fillStyle = colors[i][j];
+        gl.fillStyle = globals.data.colors[i][j];
         gl.fillRect(i*SIDE+MARGIN+OFFSET, j*SIDE+MARGIN+OFFSET, SIDE-2*OFFSET, SIDE-2*OFFSET);  
       }
     }
-    // animation start
+    previous = time;
+    if(!globals.data.done){
+      return;
+    }
+    // draw path animation start
     TIME_PER_SEGMENT = 500;
-    if(done && time_start == undefined){
+    if(time_start == undefined){
       time_start = time;
     }
     time_elapsed = time - time_start;
-    if(done){
-      gl.moveTo(centers[0].x, centers[0].y);
-      for(i=0; i<centers.length-1; i++){
-        dx = centers[i+1].x - centers[i].x;
-        dy = centers[i+1].y - centers[i].y;
-        progress = clamp(-1, TIME_PER_SEGMENT, time_elapsed - i * TIME_PER_SEGMENT) / TIME_PER_SEGMENT;
-        if(progress <= 0){
-          break;
-        }
-        // draw line segment
-        gl.lineTo(centers[i].x + progress * dx, centers[i].y + progress * dy);
+    // gl.strokeStyle = "green";
+    // gl.moveTo(globals.data.centers[0].x, globals.data.centers[0].y);
+    for(i=0; i<globals.data.centers.length-1; i++){
+      progress = clamp(-1, TIME_PER_SEGMENT, time_elapsed - i * TIME_PER_SEGMENT) / TIME_PER_SEGMENT;
+      if (progress <= 0) {
+        break;
       }
-      gl.stroke();
-      window.requestAnimationFrame(render);
-      // stop animation when time_elapsed == TIME_PER_SEGMENT * points.length
+      // heuristic or path length => clamp >> normalize >> lerp => color
+      c_i = globals.data.centers[i];
+      globals.data.colors[c_i.x][c_i.y] = lerp1(c_i.distance / globals.data.centers.length);
+      // dx = globals.data.centers[i+1].x - globals.data.centers[i].x;
+      // dy = globals.data.centers[i+1].y - globals.data.centers[i].y;
+      // draw line segment
+      // gl.strokeStyle = lerp1(i/globals.data.centers.length-1);
+      // gl.lineTo(globals.data.centers[i].x + progress * dx, globals.data.centers[i].y + progress * dy);
     }
-    previous = time;
+    // gl.stroke();
+    if (time_elapsed > TIME_PER_SEGMENT * (globals.data.centers.length + 1)) {
+      // animation time is more than max animation time
+      time_start = undefined;
+      document.querySelector("#start").removeAttribute("disabled", "");
+    }
+    else{
+      window.requestAnimationFrame(render);
+    }
+    // draw path animation end
   }
   window.requestAnimationFrame(render);
 </script>

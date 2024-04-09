@@ -6,10 +6,10 @@
 
 ## Actions
   Transitions between states are made by a total of 4 actions.
-  - GoUp: Transition from current state to the one above it.
-  - GoDown: Transition from current state to the one below it.
-  - GoLeft: Transition from current state to the one to its left.
-  - GoRight: Transition from current state to the one to its right.
+  - goUp: Transition from current state to the one above it.
+  - goDown: Transition from current state to the one below it.
+  - goLeft: Transition from current state to the one to its left.
+  - goRight: Transition from current state to the one to its right.
 
 ## Heuristic
   The Manhattan distance function $D = abs(x_1 - x_2) + abs(y_1 - y_2)$ is used as the heuristic function for the algorithm.
