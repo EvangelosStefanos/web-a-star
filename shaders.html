@@ -3,27 +3,135 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <title>Shaders</title>
 </head>
 <body>
-  <canvas style="display: block; margin: auto; width: 1280px; aspect-ratio: 16/9;"></canvas>
+  <canvas style="border: dotted; display: block; margin: auto; width: 1280px; aspect-ratio: 16/9;"></canvas>
   <script type="x-shader/x-vertex" id="vertex-shader">
     #version 100
     precision highp float;
     attribute vec2 position;
+    attribute vec3 aColor;
+    varying vec3 vColor;
+    uniform float uPointSize;
     void main() {
       gl_Position = vec4(position, 0.0, 1.0);
-      gl_PointSize = 80.0;
+      gl_PointSize = uPointSize;
+      vColor = aColor;
     }
   </script>
   <script type="x-shader/x-fragment" id="fragment-shader">
     #version 100
     precision highp float;
+    varying vec3 vColor;
+    uniform float uTime;
+    float border(vec2 xy, float min, float max){ // requires coordinates from 0 to 1 pixels on the border are 1 everything else is 0, invert by * -1. + 1.
+      xy = 2. * xy - 1.;
+      vec2 gt = step(vec2(min), abs(xy));
+      vec2 lt = step(vec2(-max), -abs(xy)); // x < min => step -min -x
+      return (gt.x + gt.y) * lt.x * lt.y; // to invert a lt => -1. * lt + 1.
+    }
+    float outerBorder(vec2 xy){
+      return border(xy, 0.8, 1.);
+    }
+    float innerBorder(vec2 xy){
+      return border(xy, 0.6, 0.8);
+    }
+    float inner(vec2 xy){
+      vec2 v = step(vec2(-0.6), -abs(2. * xy - 1.));
+      return v.x * v.y;
+    }
+    float f(vec2 xy, float animationTimeModifier){
+      xy = 2. * xy - 1.;
+      //return step(.5, 1. - distance(vec2(0.0), xy) + .75 * sin(uTime / 1000.) + .25);
+      return step(.0, - distance(vec2(0.0), xy) + animationTimeModifier * 1.5 * mod(uTime/5000., 1.));
+    }
     void main() {
-      gl_FragColor = vec4(0.18, 0.54, 0.34, 1.0);
+      float r = -1. * outerBorder(gl_PointCoord) + 1.;
+      float g = innerBorder(gl_PointCoord);
+      //gl_FragColor = vec4(vColor.r * r * g, vColor.g * g, vColor.b * g, 1.0);
+      float i = inner(gl_PointCoord);
+      float fv =  f(gl_PointCoord, 0.6);
+      vec3 c = vColor * i * fv;
+      gl_FragColor = vec4(c.r + r * g, c.g + g, c.b + g, 1.0);
+      //gl_FragColor = vec4(fv, 0.0, 0.0, 1.0);
     }
   </script>
   <script>
+    function normalize(x, xMin, xMax, newMin, newMax){
+      return newMin + (x - xMin) * (newMax - newMin) / (xMax - xMin);
+    }
+    function normalizex(x){
+      return normalize(x, 0, 1920, -1, 1);
+    }
+    function normalizey(x) {
+      return normalize(x, 0, 1080, -1, 1);
+    }
+    /*
+      TODO
+      80->160 center: 120 (side * 1.5)
+      240->320 center: 280 (side * 3.5)
+      400->480 center: 440 (side * 5.5)
+
+      (1.5 + 2 * j) * side, (1.5 + 2 * i) * side
+
+      
+      xMax = 2 * side * COLS + side
+      yMax = 2 * side * ROWS + side
+      + .5 * (WIDTH - xMax)
+      + .5 * (HEIGHT - yMax)
+
+      0 => ((i + 0.5) * SIDE) + (i + 1) * SPACING => 40
+      1 => ((i + 0.5) * SIDE) + (i + 1) * SPACING => 120
+      2 => ((i + 0.5) * SIDE) + (i + 1) * SPACING => 200
+      3 => ((i + 0.5) * SIDE) + (i + 1) * SPACING => 280
+      4 => ((i + 0.5) * SIDE) + (i + 1) * SPACING => 360
+
+      0 => (0 * SIDE) + 0.5 * SPACING => 10, 10 -> 10, yMax
+      1 => (1 * SIDE) + 1.5 * SPACING => 110, 10 -> 10, yMax
+      2 => (2 * SIDE) + 2.5 * SPACING => 210, 10 -> 10, yMax
+      3 => (3 * SIDE) + 3.5 * SPACING => 310, 10
+      4 => (4 * SIDE) + 4.5 * SPACING => 410, 10
+
+      1280, 720 => -1, 1
+      -1 => -0.10
+      1 => -0.05
+      
+      -0.10 => 0
+      -0.05 => 1
+      normalization
+    */
+    const SIDE = 250;
+    function makeGrid(){
+      ROWS = 3;
+      COLS = 3;
+      SPACING = 50;
+      WIDTH = 1920;
+      HEIGHT = 1080;
+      xOffset = (WIDTH - ((SIDE + SPACING) * COLS + SPACING)) / 2;
+      if(xOffset < 0){
+        console.log("Critical Error. Row length exceeds canvas width.");
+        return;
+      }
+      yOffset = (HEIGHT - ((SIDE + SPACING) * ROWS + SPACING)) / 2;
+      if (yOffset < 0) {
+        console.log("Critical Error. Column length exceeds canvas height.");
+        return;
+      }
+      let grid = [];
+      for(i=0; i<ROWS; i++){
+        for(j=0; j<COLS; j++){
+          x = ((j + 0.5) * SIDE) + (j + 1) * SPACING + xOffset; // (1.5 + 2 * j) * SIDE + xOffset;
+          grid.push(normalizex(x)); // push x
+          y = ((i + 0.5) * SIDE) + (i + 1) * SPACING + yOffset; // (1.5 + 2 * i) * SIDE + yOffset;
+          grid.push(normalizey(y)); // push y
+        }
+      }      
+      console.log("grid: ", grid);
+      return grid;
+    }
+    let gridPositions = makeGrid();
+    let pointCount = gridPositions.length / 2;
     function getRenderingContext() {
       const canvas = document.querySelector("canvas");
       canvas.width = 1920;
@@ -72,39 +180,62 @@
       }
       initializeAttributes();
       gl.useProgram(program);
-      gl.drawArrays(gl.POINTS, 0, 1);
+      initializeUniforms(program);
+      gl.drawArrays(gl.POINTS, 0, pointCount);
       //cleanup();
       }
 
-    let buffer;
+    let aPositionsBuffer;
+    let aColorsBuffer;
     function initializeAttributes() {
-      gl.enableVertexAttribArray(0);
-      buffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0.0, 0.0]), gl.STATIC_DRAW);
-      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0.5, 0.5]), gl.STATIC_DRAW);
+      //// aPositions
+      const aPositionsLoc = 0;
+      gl.enableVertexAttribArray(aPositionsLoc);
+      aPositionsBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, aPositionsBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(gridPositions), gl.STATIC_DRAW);
+      gl.vertexAttribPointer(aPositionsLoc, 2, gl.FLOAT, false, 0, 0);
+      //// aColor
+      const aColorLoc = 1;
+      gl.enableVertexAttribArray(aColorLoc);
+      aColorsBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, aColorsBuffer);
+      let colors = [];
+      for(i=0; i<pointCount; i++){
+        colors.push(1.);
+        colors.push(0.);
+        colors.push(0.);
+      }
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+      gl.vertexAttribPointer(aColorLoc, 3, gl.FLOAT, false, 0, 0);
     }
-
+    let uTimeLoc;
+    function initializeUniforms(program){
+      //// uPointSize
+      const uPointSizeLoc = gl.getUniformLocation(program, 'uPointSize');
+      gl.uniform1f(uPointSizeLoc, SIDE);
+      //// uTime
+      uTimeLoc = gl.getUniformLocation(program, 'uTime');
+      gl.uniform1f(uTimeLoc, 0);
+    }
     function cleanup() {
       gl.useProgram(null);
-      if (buffer) {
-        gl.deleteBuffer(buffer);
+      if (aPositionsBuffer) {
+        gl.deleteBuffer(aPositionsBuffer);
+      }
+      if (aColorsBuffer) {
+        gl.deleteBuffer(aColorsBuffer);
       }
       if (program) {
         gl.deleteProgram(program);
       }
     }
-    var x=0, y=0;
-    document.querySelector("canvas").addEventListener("click",
-        (evt) => {
-          x += .25;
-          y += .25;
-          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([x%2-1, y%2-1]), gl.STATIC_DRAW,);
-          gl.drawArrays(gl.POINTS, 0, 1);
-        },
-        false,
-      );
+    function render(time){
+      gl.uniform1f(uTimeLoc, time);
+      gl.drawArrays(gl.POINTS, 0, pointCount);
+      window.requestAnimationFrame(render);
+    }
+    window.requestAnimationFrame(render);
   </script>
 </body>
 </html>
