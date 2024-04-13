@@ -7,13 +7,13 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
   </head>
   <body class="w-100 h-100 overflow-auto">
-    <div class="min-w-fit d-flex flex-column-reverse justify-content-start align-items-center flex-xl-row justify-content-xl-center">
+    <div class="h-100 overflow-auto min-w-fit d-flex flex-column-reverse justify-content-start align-items-center flex-xl-row justify-content-xl-center align-items-xl-center">
       <canvas class="m-2" id="canvas"></canvas>
       <div class="m-2"></div>
       <div class="d-flex flex-column align-items-center">
         <div class="ps-2 pe-2 w-100 d-flex flex-row justify-content-between">
           <a href="shaders.html" target="_blank" rel="noopener noreferrer">Shader version</a>
-          <a href="http://" target="_blank" rel="noopener noreferrer">Github repo</a>
+          <a href="https://github.com/EvangelosStefanos/web-a-star" target="_blank" rel="noopener noreferrer">Github</a>
         </div>
         <ul class="m-2">
           <li>The <span class="green">Initial</span> state is <span class="green">Green</span></li>
@@ -22,7 +22,7 @@
           <li>States in the <span class="grey">Closed Set</span> are <span class="grey">Grey</span></li>
           <li><span class="black">Blocked</span> states are <span class="black">Black</span></li>
         </ul>
-        <button onclick="start()" id="start" class="btn btn-primary" type="button">Start</button> <!-- 1.[Set the start flag] 2.[Dynamically bind the disable attribute when start flag is true] -->
+        <button onclick="start()" id="start" class="btn btn-lg btn-primary" type="button">Start</button> <!-- 1.[Set the start flag] 2.[Dynamically bind the disable attribute when start flag is true] -->
       </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
@@ -41,8 +41,9 @@
   }
   canvas{
     display: inline-block;
-    width: 730px;
-    height: 730px;
+    width: 600px;
+    max-width: 100%;
+    aspect-ratio: 1/1;
   }
   ul{
     list-style-type: square;
@@ -75,7 +76,6 @@
   let data;
   function start(){
     document.querySelector("#start").setAttribute("disabled", "");
-    // TODO call aStar init
     data = aStar.init();
     let intervalId = setInterval(aStar.step, 500, data); // TODO call aStar step
     data.intervalId = intervalId;

@@ -1,5 +1,7 @@
 # web-a-star
   A Javascript implementation of the A* search algorithm.
+  
+  See it in action [**_here_**](https://evangelosstefanos.github.io/web-a-star/).
 
 ## State Space
   The state space is composed of a completely static 2-dimensional grid.
