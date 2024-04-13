@@ -8,10 +8,14 @@
   </head>
   <body class="w-100 h-100 overflow-auto">
     <div class="min-w-fit d-flex flex-column-reverse justify-content-start align-items-center flex-xl-row justify-content-xl-center">
-      <canvas id="canvas"></canvas>
+      <canvas class="m-2" id="canvas"></canvas>
       <div class="m-2"></div>
       <div class="d-flex flex-column align-items-center">
-        <ul>
+        <div class="ps-2 pe-2 w-100 d-flex flex-row justify-content-between">
+          <a href="shaders.html" target="_blank" rel="noopener noreferrer">Shader version</a>
+          <a href="http://" target="_blank" rel="noopener noreferrer">Github repo</a>
+        </div>
+        <ul class="m-2">
           <li>The <span class="green">Initial</span> state is <span class="green">Green</span></li>
           <li>The <span class="red">Goal</span> state is <span class="red">Red</span></li>
           <li>States in the <span class="blue">Search Frontier</span> are <span class="blue">Blue</span></li>
@@ -22,10 +26,13 @@
       </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script src="js/gridSpace.js"></script>
+    <script src="js/aStar.js"></script>
+    <script src="js/renderer.js"></script>
   </body>
 </html>
 <style>
-  min-w-fit{
+  .min-w-fit {
     min-width: fit-content;
   }
   html, body {
@@ -65,341 +72,16 @@
   }
 </style>
 <script>
-  globals = {
-    WIDTH: 9,
-    HEIGHT: 9,
-    data: {},
-    iId: 0,
-  }
-  globals.data.colors = createColors(); // needed for rendering
+  let data;
   function start(){
     document.querySelector("#start").setAttribute("disabled", "");
-    globals.data = init();
-    globals.iId = setInterval(simple_a_star_step, 500, globals.data);
-  }
-  function createColors2(width, height){
-    colors = [];    
-    for (w = 0; w < width; w++) {
-      colors.push([]);
-      for (h = 0; h < height; h++) {
-        colors[w][h] = "white";
-      }
-    }
-    return colors;
-  }
-  function createColors(){
-    return createColors2(globals.WIDTH, globals.HEIGHT);
-  }
-  //// State
-  function newState(x, y){
-    free = [];
-    for(w=0; w<globals.WIDTH; w++){
-      free.push([]);
-      for(h=0; h<globals.HEIGHT; h++){
-        free[w][h] = true;
-      }
-    }
-    return {
-      x: x,
-      y: y,
-      free: free,
-      path: [],
-      heuristic: Number.POSITIVE_INFINITY,
-    }
-  }
-  function cloneState(state){
-    clone = newState(0, 0);
-    clone.x = state.x;
-    clone.y = state.y;
-    clone.free = Array.from(state.free);
-    clone.path = Array.from(state.path);
-    clone.heuristic = state.heuristic;
-    return clone;
-  }
-  function equals(state, other){
-    return state.x == other.x && state.y == other.y;
-  }
-  function print_path(state){
-    console.log(state.path.join("->"));
-  }
-  function convert_path(path, centers, colors) {
-    var x = 2; // initial state
-    var y = 2;
-    centers.push({x: x, y: y, distance: 0});
-    for (i = 0; i < path.length; i++) {
-      if (path[i] == "Up") {
-        y -= 1;
-      }
-      else if (path[i] == "Down") {
-        y += 1;
-      }
-      else if (path[i] == "Left") {
-        x -= 1;
-      }
-      else if (path[i] == "Right") {
-        x += 1;
-      }
-      else{
-        console.log("Error. Should never happen. Invalid value in path.");
-      }
-      centers.push({x: x, y: y, distance: i+1});
-    }
-  }
-  //// Actions
-  function goUp(parent){
-    child = cloneState(parent);
-    isValid = false;
-    if(parent.y > 0 && parent.free[parent.x][parent.y-1] ){
-      child.y -= 1;
-      child.path.push("Up");
-      isValid = true;
-    }
-    return {
-      isValid: isValid,
-      child: child,
-    }
-  }
-  function goDown(parent){
-    child = cloneState(parent);
-    isValid = false;
-    if(parent.y < globals.HEIGHT-1 && parent.free[parent.x][parent.y+1] ){
-      child.y += 1;
-      child.path.push("Down");
-      isValid = true;
-    }
-    return {
-      isValid: isValid,
-      child: child,
-    }
-  }
-  function goLeft(parent){
-    child = cloneState(parent);
-    isValid = false;
-    if(parent.x > 0 && parent.free[parent.x-1][parent.y] ){
-      child.x -= 1;
-      child.path.push("Left");
-      isValid = true;
-    }
-    return {
-      isValid: isValid,
-      child: child,
-    }
-  }
-  function goRight(parent){
-    child = cloneState(parent);
-    isValid = false;
-    if(parent.x < globals.WIDTH-1 && parent.free[parent.x+1][parent.y] ){
-      child.x += 1;
-      child.path.push("Right");
-      isValid = true;
-    }
-    return {
-      isValid: isValid,
-      child: child,
-    }
-  }
-  //// Expand and Heuristic
-  function expand(parent){
-    actions = [
-      goUp(parent),
-      goDown(parent),
-      goLeft(parent),
-      goRight(parent)
-    ];
-    return actions.filter(x => x.isValid).map(x => x.child);
-  }
-  function evaluate(state, goal) {
-    state.heuristic = Math.abs(state.x - goal.x) + Math.abs(state.y - goal.y);
-  }
-  /* if < 0 then state > other
-   * if > 0 then state < other
-  */
-  function compare(state, other){
-    return other.heuristic - state.heuristic; // descending order so i can use pop() to extract minimum
-  }
-  function sorted_push(array, item){
-    array.push(item);
-    array.sort(compare);
-  }
-  function includes(array, state){
-    return array.filter(x => equals(x, state)).length > 0;
-  }
-  function hasBetter(array, state){
-    return array
-      .filter(x => equals(x, state))
-      .filter(x => compare(x, state) >= 0)
-      .length > 0;
-  }
-  function init(){
-    initial = newState(2, 2);
-    initial.free[6][2] = false;
-    initial.free[5][3] = false;
-    initial.free[6][3] = false;
-    initial.free[7][4] = false;
-    initial.free[5][5] = false;
-    initial.free[6][5] = false;
-    initial.free[5][6] = false;
-    initial.free[2][7] = false;
-    initial.free[3][7] = false;
-    initial.free[4][7] = false;
-    initial.free[5][7] = false;
-    goal = newState(7, 8);
-
-    colors = createColors();
-    colors[2][2] = "green";
-    colors[6][2] = "black";
-    colors[5][3] = "black";
-    colors[6][3] = "black";
-    colors[7][4] = "black";
-    colors[5][5] = "black";
-    colors[6][5] = "black";
-    colors[5][6] = "black";
-    colors[2][7] = "black";
-    colors[3][7] = "black";
-    colors[4][7] = "black";
-    colors[5][7] = "black";
-    colors[7][8] = "red";
-
-    closed_set = [];
-    search_frontier = [];
-    sorted_push(search_frontier, initial);
-    done = false;
-    centers = [];
-    return {
-      initial: initial,
-      goal: goal,
-      colors: colors,
-      closed_set: closed_set,
-      search_frontier: search_frontier,
-      done: done,
-      centers: centers,
-    }
-  }
-  
-  function simple_a_star_step(data){
-    if(data.done || data.search_frontier.length <= 0){
-      clearInterval(globals.iId);
-      data.done = true;
-      return data.done;
-    }
-    // if(search_frontier.length > 0) { // if there are states in the search frontier
-    //static int k = 0; // These 3 lines print how many iterations the algorithm does.
-    //k++;
-    //cout << "Loops Began :" << k <<endl;
-
-    state = data.search_frontier.pop(); // Acquire the best state from the search frontier
-
-    if(includes(data.closed_set, state)){
-      return data.done; // If state has already been visited continue the next iteration
-    }
-    
-    if(equals(state, data.goal)){ //If state is final, print the path and exit
-      print_path(state);
-      convert_path(state.path, data.centers, data.colors);
-      window.requestAnimationFrame(render);
-      data.done = true;
-      return data.done;
-    }
-    
-    children = expand(state);
-    for(i=0; i<children.length; i++){ // Evaluate all children and add them to the search frontier
-      evaluate(children[i], data.goal);
-      if(hasBetter(data.search_frontier, children[i])){
-        continue; // if child already in search_frontier with a better heuristic then skip
-      }
-      if(hasBetter(data.closed_set, children[i])){
-        continue; // if child already in closed_set with a better heuristic then skip
-      }
-      sorted_push(data.search_frontier, children[i]);
-      if(data.colors[children[i].x][children[i].y] == "white"){
-        data.colors[children[i].x][children[i].y] = "blue";
-      }
-    }
-    
-    data.closed_set.push(state); // Add parent state to the closed set
-    if(data.colors[state.x][state.y] == "blue"){
-      data.colors[state.x][state.y] = "grey";
-    }
-    window.requestAnimationFrame(render);
-    return data.done;
-  }
-  //// Render
-  function clamp(min, max, value) {
-    return Math.min(Math.max(value, min), max);
-  };
-  function lerp3(startColor, endColor, percentFade){
-    var diffRed = endColor.red - startColor.red;
-    var diffGreen = endColor.green - startColor.green;
-    var diffBlue = endColor.blue - startColor.blue;
-
-    return {
-      red: (diffRed * percentFade) + startColor.red,
-      green: (diffGreen * percentFade) + startColor.green,
-      blue: (diffBlue * percentFade) + startColor.blue,
-    }
-  }
-  function lerp1(percentFade){
-    point = lerp3({ red: 0, green: 255, blue: 0 }, { red: 255, green: 0, blue: 0 }, percentFade);
-    return "rgb("+point.red+", "+point.green+", "+point.blue+")";
-  }
-  timeout = 0;
-  previous = 0;
-  time_start = undefined;
-  function render(time) {
-    const canvas = document.querySelector("#canvas");
-    canvas.width=730;
-    canvas.height=730;
-    const gl = canvas.getContext("2d");
-    gl.lineWidth = 5;
-    gl.strokeStyle = "black";
-    SIDE = 80;
-    MARGIN = 5;
-    OFFSET = 10;
-    for(i=0; i<globals.WIDTH; i++){
-      for(j=0; j<globals.HEIGHT; j++){
-        gl.strokeRect(i*SIDE+MARGIN, j*SIDE+MARGIN, SIDE, SIDE);
-        gl.fillStyle = globals.data.colors[i][j];
-        gl.fillRect(i*SIDE+MARGIN+OFFSET, j*SIDE+MARGIN+OFFSET, SIDE-2*OFFSET, SIDE-2*OFFSET);  
-      }
-    }
-    previous = time;
-    if(!globals.data.done){
-      return;
-    }
-    // draw path animation start
-    TIME_PER_SEGMENT = 500;
-    if(time_start == undefined){
-      time_start = time;
-    }
-    time_elapsed = time - time_start;
-    // gl.strokeStyle = "green";
-    // gl.moveTo(globals.data.centers[0].x, globals.data.centers[0].y);
-    for(i=0; i<globals.data.centers.length-1; i++){
-      progress = clamp(-1, TIME_PER_SEGMENT, time_elapsed - i * TIME_PER_SEGMENT) / TIME_PER_SEGMENT;
-      if (progress <= 0) {
-        break;
-      }
-      // heuristic or path length => clamp >> normalize >> lerp => color
-      c_i = globals.data.centers[i];
-      globals.data.colors[c_i.x][c_i.y] = lerp1(c_i.distance / globals.data.centers.length);
-      // dx = globals.data.centers[i+1].x - globals.data.centers[i].x;
-      // dy = globals.data.centers[i+1].y - globals.data.centers[i].y;
-      // draw line segment
-      // gl.strokeStyle = lerp1(i/globals.data.centers.length-1);
-      // gl.lineTo(globals.data.centers[i].x + progress * dx, globals.data.centers[i].y + progress * dy);
-    }
-    // gl.stroke();
-    if (time_elapsed > TIME_PER_SEGMENT * (globals.data.centers.length + 1)) {
-      // animation time is more than max animation time
-      time_start = undefined;
-      document.querySelector("#start").removeAttribute("disabled", "");
-    }
-    else{
-      window.requestAnimationFrame(render);
-    }
-    // draw path animation end
-  }
-  window.requestAnimationFrame(render);
+    // TODO call aStar init
+    data = aStar.init();
+    let intervalId = setInterval(aStar.step, 500, data); // TODO call aStar step
+    data.intervalId = intervalId;
+    renderer.data = data;
+    window.requestAnimationFrame(render); // TODO fix
+  }  
 </script>
 
 <!--
