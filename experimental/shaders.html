@@ -102,6 +102,7 @@
       normalization
     */
     const SIDE = 250;
+    
     function makeGrid(){
       ROWS = 3;
       COLS = 3;
@@ -130,13 +131,18 @@
       console.log("grid: ", grid);
       return grid;
     }
+    
     let gridPositions = makeGrid();
     let pointCount = gridPositions.length / 2;
+    
+    let gl;
+    let program;
+
     function getRenderingContext() {
       const canvas = document.querySelector("canvas");
       canvas.width = 1920;
       canvas.height = 1080;
-      const gl =
+      gl =
         canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
       if (!gl) {
         console.log("Failed to get WebGL context. Your browser or device may not support WebGL.");
@@ -145,15 +151,12 @@
       gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
       gl.clearColor(1.0, 1.0, 1.0, 1.0);
       gl.clear(gl.COLOR_BUFFER_BIT);
-      return gl;
     }
-    window.addEventListener("load", setupWebGL, false);
-    let gl;
-    let program;
 
     function setupWebGL(evt) {
       window.removeEventListener(evt.type, setupWebGL, false);
-      if (!(gl = getRenderingContext())) return;
+      getRenderingContext();
+      if (!(gl)) return;
 
       let source = document.querySelector("#vertex-shader").innerHTML;
       const vertexShader = gl.createShader(gl.VERTEX_SHADER);
@@ -185,18 +188,21 @@
       //cleanup();
       }
 
+    window.addEventListener("load", setupWebGL, false);
+
+    let aPositionsLoc = 0;
     let aPositionsBuffer;
+    let aColorLoc = 1;
     let aColorsBuffer;
+    
     function initializeAttributes() {
       //// aPositions
-      const aPositionsLoc = 0;
       gl.enableVertexAttribArray(aPositionsLoc);
       aPositionsBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, aPositionsBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(gridPositions), gl.STATIC_DRAW);
       gl.vertexAttribPointer(aPositionsLoc, 2, gl.FLOAT, false, 0, 0);
       //// aColor
-      const aColorLoc = 1;
       gl.enableVertexAttribArray(aColorLoc);
       aColorsBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, aColorsBuffer);
@@ -209,10 +215,13 @@
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
       gl.vertexAttribPointer(aColorLoc, 3, gl.FLOAT, false, 0, 0);
     }
+    
+    let uPointSizeLoc;
     let uTimeLoc;
+
     function initializeUniforms(program){
       //// uPointSize
-      const uPointSizeLoc = gl.getUniformLocation(program, 'uPointSize');
+      uPointSizeLoc = gl.getUniformLocation(program, 'uPointSize');
       gl.uniform1f(uPointSizeLoc, SIDE);
       //// uTime
       uTimeLoc = gl.getUniformLocation(program, 'uTime');
