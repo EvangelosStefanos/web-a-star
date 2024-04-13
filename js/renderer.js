@@ -24,8 +24,8 @@ let renderer = {
 
 function render(time) { // public
   const canvas = document.querySelector("#canvas");
-  canvas.width=730;
-  canvas.height=730;
+  canvas.width=800;
+  canvas.height=800;
   const gl = canvas.getContext("2d");
   gl.lineWidth = 5;
   gl.strokeStyle = "black";
