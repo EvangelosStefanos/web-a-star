@@ -79,49 +79,8 @@
   let searchAlgorithm;
   let animator;
   let renderer;
-  function render(time) { // public
-    for (var i = 0; i < renderer.ROWS; i++) {
-      for (let j = 0; j < renderer.COLS; j++) {
-        renderer.gl.strokeRect(j * renderer.SIDE + renderer.MARGIN, i * renderer.SIDE + renderer.MARGIN, renderer.SIDE, renderer.SIDE);
-        renderer.gl.fillStyle = renderer.animator.colors[i][j];
-        renderer.gl.fillRect(j * renderer.SIDE + renderer.MARGIN + renderer.OFFSET, i * renderer.SIDE + renderer.MARGIN + renderer.OFFSET, renderer.SIDE - 2 * renderer.OFFSET, renderer.SIDE - 2 * renderer.OFFSET);
-      }
-    }
-    if (renderer.convertedPath.length == 0) {
-      window.requestAnimationFrame(render);
-      return;
-    }
-    // draw path animation start
-    if (renderer.time_start == undefined) {
-      renderer.time_start = time;
-    }
-    let time_elapsed = time - renderer.time_start;
-    // gl.strokeStyle = "green";
-    // gl.moveTo(globals.data.centers[0].x, globals.data.centers[0].y);
-    for (i = 0; i < renderer.convertedPath.length - 1; i++) {
-      let progress = renderer.clamp(-1, renderer.TIME_PER_SEGMENT, time_elapsed - i * renderer.TIME_PER_SEGMENT) / renderer.TIME_PER_SEGMENT;
-      if (progress <= 0) {
-        break;
-      }
-      // heuristic or path length => clamp >> normalize >> lerp => color
-      let c_i = renderer.convertedPath[i];
-      renderer.animator.colors[c_i.row][c_i.col] = renderer.lerp1(c_i.distance / (renderer.convertedPath.length-1));
-      // dx = globals.data.centers[i+1].x - globals.data.centers[i].x;
-      // dy = globals.data.centers[i+1].y - globals.data.centers[i].y;
-      // draw line segment
-      // gl.strokeStyle = lerp1(i/globals.data.centers.length-1);
-      // gl.lineTo(globals.data.centers[i].x + progress * dx, globals.data.centers[i].y + progress * dy);
-    }
-    // gl.stroke();
-    if (time_elapsed > renderer.TIME_PER_SEGMENT * (renderer.convertedPath.length + 1)) {
-      // animation time is more than max animation time
-      renderer.time_start = undefined;
-      document.querySelector("#start").removeAttribute("disabled", "");
-    }
-    else {
-      window.requestAnimationFrame(render);
-    }
-    // draw path animation end
+  function render(time) {
+    renderer.render(time);
   }
 
   function start(){
@@ -135,12 +94,12 @@
       animator.searchFrontierTransitions(searchAlgorithm.search_frontier_additions);
       animator.closedSetTransitions(searchAlgorithm.closed_set_additions);
       if(done){
+        animator.pathTransitions(searchAlgorithm.convertedPath);
         clearInterval(intervalId);
-        renderer.convertedPath = searchAlgorithm.convertedPath;
       }
     }
-    intervalId = setInterval(loop, 500); // TODO call aStar step
-    window.requestAnimationFrame(render); // TODO fix
+    intervalId = setInterval(loop, 500);
+    window.requestAnimationFrame(render);
   }  
 </script>
 

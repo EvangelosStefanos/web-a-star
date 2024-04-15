@@ -34,28 +34,28 @@ class GridSpaceState { // A single state of the grid space
   print_path(){
     console.log(this.path.join("->"));
   }
-  convert_path(rowInitial, colInitial) {
+  convert_path(xInitial, yInitial) {
     let array = [];
-    let row = rowInitial;
-    let col = colInitial;
-    array.push({row: row, col: col, distance: 0});
+    let x = xInitial;
+    let y = yInitial;
+    array.push({x: x, y: y, distance: 0});
     for (let i = 0; i < this.path.length; i++) {
       if (this.path[i] == "Up") {
-        row -= 1;
+        x -= 1;
       }
       else if (this.path[i] == "Down") {
-        row += 1;
+        x += 1;
       }
       else if (this.path[i] == "Left") {
-        col -= 1;
+        y -= 1;
       }
       else if (this.path[i] == "Right") {
-        col += 1;
+        y += 1;
       }
       else{
         console.log("Error. Should never happen. Invalid value in path.");
       }
-      array.push({row: row, col: col, distance: i+1});
+      array.push({x: x, y: y, distance: i+1});
     }
     return array;
   }
