@@ -185,8 +185,8 @@
       gl.useProgram(program);
       initializeUniforms(program);
       gl.drawArrays(gl.POINTS, 0, pointCount);
-      //cleanup();
-      }
+      window.requestAnimationFrame(render);
+    }
 
     window.addEventListener("load", setupWebGL, false);
 
@@ -240,11 +240,17 @@
       }
     }
     function render(time){
+      /*
+      TODO animation_time_i, newColor_i
+      if animation_time_i == 0 >> dont update animation_time_i >> pass animation_time_i
+      animation_time_i = 0.001
+      elif animation_time_i > 0 >> update animation_time_i >> pass animation_time_i
+      elif animation_time_i > 1 >> oldColor_i = newColor_i >> animation_time_i = 0 >> pass animation_time_i
+      */
       gl.uniform1f(uTimeLoc, time);
       gl.drawArrays(gl.POINTS, 0, pointCount);
       window.requestAnimationFrame(render);
     }
-    window.requestAnimationFrame(render);
   </script>
 </body>
 </html>

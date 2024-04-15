@@ -1,73 +1,55 @@
-
-let gridSpace = {
-  ROWS: 9,
-  COLS: 9,
-  colors: [],
-  //// COLORS
-  createColors2(rows, cols){
-    let colors = [];    
-    for (i = 0; i < rows; i++) {
-      colors.push([]);
-      for (j = 0; j < cols; j++) {
-        colors[i][j] = "white";
-      }
-    }
-    return colors;
-  },
-  createColors(){
-    return gridSpace.createColors2(gridSpace.ROWS, gridSpace.COLS);
-  },
-  //// State
-  newState4(x, y, rows, cols){
-    free = [];
-    for(i=0; i<rows; i++){
+class GridSpaceState { // A single state of the grid space
+  constructor(x, y, rows, cols){
+    let free = [];
+    for(let i=0; i<rows; i++){
       free.push([]);
-      for(j=0; j<cols; j++){
+      for(let j=0; j<cols; j++){
         free[i][j] = true;
       }
     }
-    return {
-      x: x,
-      y: y,
-      free: free,
-      path: [],
-      heuristic: Number.POSITIVE_INFINITY,
-    }
-  },
-  newState(x, y){
-    return gridSpace.newState4(x, y, gridSpace.ROWS, gridSpace.COLS);
-  },
-  cloneState(state){
-    clone = gridSpace.newState(0, 0);
-    clone.x = state.x;
-    clone.y = state.y;
-    clone.free = Array.from(state.free);
-    clone.path = Array.from(state.path);
-    clone.heuristic = state.heuristic;
+    this.x = x;
+    this.y = y;
+    this.ROWS = rows;
+    this.COLS = cols;
+    this.free = free;
+    this.path = [];
+    this.heuristic = Number.POSITIVE_INFINITY;
+  }
+  setBlocked(blocked){
+    blocked.forEach(b=>{this.free[b.x][b.y] = false;});
+  }
+  clone(){
+    let clone = new GridSpaceState(0, 0, this.ROWS, this.COLS);
+    clone.x = this.x;
+    clone.y = this.y;
+    clone.free = Array.from(this.free);
+    clone.path = Array.from(this.path);
+    clone.heuristic = this.heuristic;
     return clone;
-  },
-  equals(state, other){ // public
-    return state.x == other.x && state.y == other.y;
-  },
-  print_path(state){ // public
-    console.log(state.path.join("->"));
-  },
-  convert_path(path, rowInitial, colInitial) { // public
+  }
+  equals(other){
+    return this.x == other.x && this.y == other.y;
+  }
+  //// Paths ////
+  print_path(){
+    console.log(this.path.join("->"));
+  }
+  convert_path(rowInitial, colInitial) {
     let array = [];
-    var row = rowInitial;
-    var col = colInitial;
+    let row = rowInitial;
+    let col = colInitial;
     array.push({row: row, col: col, distance: 0});
-    for (i = 0; i < path.length; i++) {
-      if (path[i] == "Up") {
+    for (let i = 0; i < this.path.length; i++) {
+      if (this.path[i] == "Up") {
         row -= 1;
       }
-      else if (path[i] == "Down") {
+      else if (this.path[i] == "Down") {
         row += 1;
       }
-      else if (path[i] == "Left") {
+      else if (this.path[i] == "Left") {
         col -= 1;
       }
-      else if (path[i] == "Right") {
+      else if (this.path[i] == "Right") {
         col += 1;
       }
       else{
@@ -76,12 +58,12 @@ let gridSpace = {
       array.push({row: row, col: col, distance: i+1});
     }
     return array;
-  },
-  //// Actions
-  goUp(parent){
-    child = gridSpace.cloneState(parent);
-    isValid = false;
-    if(parent.x > 0 && parent.free[parent.x-1][parent.y] ){
+  }
+  //// Actions ////
+  goUp(){
+    let child = this.clone();
+    let isValid = false;
+    if(this.x > 0 && this.free[this.x-1][this.y] ){
       child.x -= 1;
       child.path.push("Up");
       isValid = true;
@@ -90,11 +72,11 @@ let gridSpace = {
       isValid: isValid,
       child: child,
     }
-  },
-  goDown(parent){
-    child = gridSpace.cloneState(parent);
-    isValid = false;
-    if(parent.x < gridSpace.ROWS-1 && parent.free[parent.x+1][parent.y] ){
+  }
+  goDown(){
+    let child = this.clone();
+    let isValid = false;
+    if(this.x < this.ROWS-1 && this.free[this.x+1][this.y] ){
       child.x += 1;
       child.path.push("Down");
       isValid = true;
@@ -103,11 +85,11 @@ let gridSpace = {
       isValid: isValid,
       child: child,
     }
-  },
-  goLeft(parent){
-    child = gridSpace.cloneState(parent);
-    isValid = false;
-    if(parent.y > 0 && parent.free[parent.x][parent.y-1] ){
+  }
+  goLeft(){
+    let child = this.clone();
+    let isValid = false;
+    if(this.y > 0 && this.free[this.x][this.y-1] ){
       child.y -= 1;
       child.path.push("Left");
       isValid = true;
@@ -116,11 +98,11 @@ let gridSpace = {
       isValid: isValid,
       child: child,
     }
-  },
-  goRight(parent){
-    child = gridSpace.cloneState(parent);
-    isValid = false;
-    if(parent.y < gridSpace.COLS-1 && parent.free[parent.x][parent.y+1] ){
+  }
+  goRight(){
+    let child = this.clone();
+    let isValid = false;
+    if(this.y < this.COLS-1 && this.free[this.x][this.y+1] ){
       child.y += 1;
       child.path.push("Right");
       isValid = true;
@@ -129,56 +111,62 @@ let gridSpace = {
       isValid: isValid,
       child: child,
     }
-  },
-  //// Expand and Heuristic
-  expand(parent){
-    actions = [
-      gridSpace.goUp(parent),
-      gridSpace.goDown(parent),
-      gridSpace.goLeft(parent),
-      gridSpace.goRight(parent)
+  }
+  //// Expand and Heuristic ////
+  expand(){
+    let actions = [
+      this.goUp(),
+      this.goDown(),
+      this.goLeft(),
+      this.goRight()
     ];
     return actions.filter(x => x.isValid).map(x => x.child);
-  },
-  evaluate(state, goal) {
-    state.heuristic = Math.abs(state.x - goal.x) + Math.abs(state.y - goal.y);
-  },
-  /* if < 0 then state > other
-    * if > 0 then state < other
+  }
+  evaluate(goal) {
+    this.heuristic = Math.abs(this.x - goal.x) + Math.abs(this.y - goal.y);
+  }
+  /* 
+  if < 0 then this > other
+  if > 0 then this < other
   */
   compare(state, other){ // public
     return other.heuristic - state.heuristic; // descending order so i can use pop() to extract minimum
-  },
-  init(){ // public
-    initial = gridSpace.newState(2, 2);
-    initial.free[6][2] = false;
-    initial.free[5][3] = false;
-    initial.free[6][3] = false;
-    initial.free[7][4] = false;
-    initial.free[5][5] = false;
-    initial.free[6][5] = false;
-    initial.free[5][6] = false;
-    initial.free[2][7] = false;
-    initial.free[3][7] = false;
-    initial.free[4][7] = false;
-    initial.free[5][7] = false;
-    goal = gridSpace.newState(7, 8);
-
-    colors = gridSpace.createColors();
-    colors[2][2] = "green";
-    colors[6][2] = "black";
-    colors[5][3] = "black";
-    colors[6][3] = "black";
-    colors[7][4] = "black";
-    colors[5][5] = "black";
-    colors[6][5] = "black";
-    colors[5][6] = "black";
-    colors[2][7] = "black";
-    colors[3][7] = "black";
-    colors[4][7] = "black";
-    colors[5][7] = "black";
-    colors[7][8] = "red";
-    return {initial: initial, goal: goal, colors: colors, maxRows: gridSpace.ROWS, maxCols: gridSpace.COLS};
-  },
+  }
 }
 
+function getRandomInt(max) {
+  return Math.floor(Math.random() * max);
+}
+class GridSpace { // Properties of a grid space
+  constructor(rows, cols){
+    this.ROWS = rows;
+    this.COLS = cols;
+    this.BLOCKED = [
+      {x:6, y:2},
+      {x:5, y:3},
+      {x:6, y:3},
+      {x:7, y:4},
+      {x:5, y:5},
+      {x:6, y:5},
+      {x:5, y:6},
+      {x:2, y:7},
+      {x:3, y:7},
+      {x:4, y:7},
+      {x:5, y:7},
+    ];
+    this.INITIAL = this.createRandomState();
+    this.INITIAL.setBlocked(this.BLOCKED);
+    this.GOAL = this.createRandomState();
+  }
+  createRandomState(){
+    for (let i=0; i<100; i++){
+      let x = getRandomInt(this.ROWS);
+      let y = getRandomInt(this.COLS);
+      if(this.BLOCKED.filter(b => b.x == x && b.y == y) == 0){
+        return new GridSpaceState(x, y, this.ROWS, this.COLS, this.BLOCKED);
+      }
+    }
+    console.log("Critical Error. Cannot create valid random state.");
+    return new GridSpaceState(0, 0, this.ROWS, this.COLS, this.BLOCKED);
+  }
+}

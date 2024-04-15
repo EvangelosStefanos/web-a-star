@@ -28,6 +28,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
     <script src="js/gridSpace.js"></script>
     <script src="js/aStar.js"></script>
+    <script src="experimental/animators.js"></script>
     <script src="js/renderer.js"></script>
   </body>
 </html>
@@ -73,13 +74,72 @@
   }
 </style>
 <script>
-  let data;
+  let intervalId;
+  let space;
+  let searchAlgorithm;
+  let animator;
+  let renderer;
+  function render(time) { // public
+    for (var i = 0; i < renderer.ROWS; i++) {
+      for (let j = 0; j < renderer.COLS; j++) {
+        renderer.gl.strokeRect(j * renderer.SIDE + renderer.MARGIN, i * renderer.SIDE + renderer.MARGIN, renderer.SIDE, renderer.SIDE);
+        renderer.gl.fillStyle = renderer.animator.colors[i][j];
+        renderer.gl.fillRect(j * renderer.SIDE + renderer.MARGIN + renderer.OFFSET, i * renderer.SIDE + renderer.MARGIN + renderer.OFFSET, renderer.SIDE - 2 * renderer.OFFSET, renderer.SIDE - 2 * renderer.OFFSET);
+      }
+    }
+    if (renderer.convertedPath.length == 0) {
+      window.requestAnimationFrame(render);
+      return;
+    }
+    // draw path animation start
+    if (renderer.time_start == undefined) {
+      renderer.time_start = time;
+    }
+    let time_elapsed = time - renderer.time_start;
+    // gl.strokeStyle = "green";
+    // gl.moveTo(globals.data.centers[0].x, globals.data.centers[0].y);
+    for (i = 0; i < renderer.convertedPath.length - 1; i++) {
+      let progress = renderer.clamp(-1, renderer.TIME_PER_SEGMENT, time_elapsed - i * renderer.TIME_PER_SEGMENT) / renderer.TIME_PER_SEGMENT;
+      if (progress <= 0) {
+        break;
+      }
+      // heuristic or path length => clamp >> normalize >> lerp => color
+      let c_i = renderer.convertedPath[i];
+      renderer.animator.colors[c_i.row][c_i.col] = renderer.lerp1(c_i.distance / (renderer.convertedPath.length-1));
+      // dx = globals.data.centers[i+1].x - globals.data.centers[i].x;
+      // dy = globals.data.centers[i+1].y - globals.data.centers[i].y;
+      // draw line segment
+      // gl.strokeStyle = lerp1(i/globals.data.centers.length-1);
+      // gl.lineTo(globals.data.centers[i].x + progress * dx, globals.data.centers[i].y + progress * dy);
+    }
+    // gl.stroke();
+    if (time_elapsed > renderer.TIME_PER_SEGMENT * (renderer.convertedPath.length + 1)) {
+      // animation time is more than max animation time
+      renderer.time_start = undefined;
+      document.querySelector("#start").removeAttribute("disabled", "");
+    }
+    else {
+      window.requestAnimationFrame(render);
+    }
+    // draw path animation end
+  }
+
   function start(){
     document.querySelector("#start").setAttribute("disabled", "");
-    data = aStar.init();
-    let intervalId = setInterval(aStar.step, 500, data); // TODO call aStar step
-    data.intervalId = intervalId;
-    renderer.data = data;
+    space = new GridSpace(9, 9);
+    searchAlgorithm = new Astar(space.INITIAL, space.GOAL, GridSpaceState.prototype.compare);
+    animator = new AnimatorInstant(space.INITIAL, space.GOAL, space.BLOCKED, space.ROWS, space.COLS);
+    renderer = new Renderer(space.ROWS, space.COLS, animator);
+    function loop() {
+      let done = searchAlgorithm.step();
+      animator.searchFrontierTransitions(searchAlgorithm.search_frontier_additions);
+      animator.closedSetTransitions(searchAlgorithm.closed_set_additions);
+      if(done){
+        clearInterval(intervalId);
+        renderer.convertedPath = searchAlgorithm.convertedPath;
+      }
+    }
+    intervalId = setInterval(loop, 500); // TODO call aStar step
     window.requestAnimationFrame(render); // TODO fix
   }  
 </script>
