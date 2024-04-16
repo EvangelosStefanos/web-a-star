@@ -66,13 +66,12 @@ class AnimatorInstant {
   }
   pathTransitions(path){
     this.path = path.map(p=>{
-        return {x: p.x, y: p.y, color: lerp1(p.distance / (path.length-1))}; //this.pathColors.push(lerp1(p.distance / (path.length-1)));
+        return {x: p.x, y: p.y, color: lerp1(p.distance / (path.length+1))}; //this.pathColors.push(lerp1(p.distance / (path.length-1)));
     })
   }
 }
 
 /*
-TODO animation_time_i, newColor_i
 if animation_time_i == 0 >> dont update animation_time_i >> pass animation_time_i
 animation_time_i = 0.001
 elif animation_time_i > 0 >> update animation_time_i >> pass animation_time_i
@@ -148,11 +147,11 @@ class AnimatorShader {
   pathTransitions(path){
     let STAGGER = 200; // ms
     let time = performance.now();
-    this.endTime = time + this.PATH_TRANSITION_DURATION + STAGGER * (path.length-1);
-    for(let i=1; i<path.length-1; i++){
+    this.endTime = time + this.PATH_TRANSITION_DURATION + STAGGER * path.length;
+    for(let i=0; i<path.length; i++){
       this.animation_times[path[i].x][path[i].y] = time + STAGGER * i;
       this.animation_durations[path[i].x][path[i].y] = this.PATH_TRANSITION_DURATION;
-      this.newColors[path[i].x][path[i].y] = lerp1(i / (path.length-1));
+      this.newColors[path[i].x][path[i].y] = lerp1( (i + 1) / (path.length + 1) );
     }
   }
   createAnimationTimes(time){ // time is total running time in ms

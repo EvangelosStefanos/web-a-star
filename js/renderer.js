@@ -39,7 +39,7 @@ class RendererSimple {
       this.time_start = time;
     }
     let time_elapsed = time - this.time_start;
-    for (i = 0; i < this.animator.path.length - 1; i++) {
+    for (i = 0; i < this.animator.path.length; i++) {
       let progress = clamp(-1, this.TIME_PER_SEGMENT, time_elapsed - i * this.TIME_PER_SEGMENT) / this.TIME_PER_SEGMENT;
       if (progress <= 0) {
         break;
@@ -47,7 +47,7 @@ class RendererSimple {
       let p_i = this.animator.path[i];
       this.animator.colors[p_i.x][p_i.y] = p_i.color;
     }
-    if (time_elapsed > this.TIME_PER_SEGMENT * (this.animator.path.length + 1)) {
+    if (time_elapsed > this.TIME_PER_SEGMENT * this.animator.path.length) {
       // animation time is more than max animation time
       this.time_start = undefined;
       document.querySelector("#start").removeAttribute("disabled", "");
@@ -60,14 +60,16 @@ class RendererShader {
   constructor(rows, cols, animator){
     this.animator = animator;
     this.done = false;
-    //// grid ////
-    this.SIDE = 80;
-    this.ROWS = rows;
-    this.COLS = cols;
-    this.SPACING = 0;
+    this.PATTERN = /[rgb()\s]+/g;
+    //// canvas resolution ////
     this.WIDTH = 800;
     let ASPECTRATIO = 1;
     this.HEIGHT = ASPECTRATIO * this.WIDTH;
+    //// grid ////
+    this.ROWS = rows;
+    this.COLS = cols;
+    this.SIDE = this.WIDTH / (rows+1);
+    this.SPACING = 0;
     this.xOffset = (this.WIDTH - ((this.SIDE + this.SPACING) * this.COLS + this.SPACING)) / 2;
     this.yOffset = (this.HEIGHT - ((this.SIDE + this.SPACING) * this.ROWS + this.SPACING)) / 2;
     this.gridPositions = this.makeGrid();
@@ -83,13 +85,6 @@ class RendererShader {
     this.program = o.program;
   }
   /*
-    80->160 center: 120 (side * 1.5)
-    240->320 center: 280 (side * 3.5)
-    400->480 center: 440 (side * 5.5)
-
-    (1.5 + 2 * j) * side, (1.5 + 2 * i) * side
-
-    
     xMax = 2 * side * COLS + side
     yMax = 2 * side * ROWS + side
     + .5 * (WIDTH - xMax)
@@ -106,14 +101,6 @@ class RendererShader {
     2 => (2 * SIDE) + 2.5 * SPACING => 210, 10 -> 10, yMax
     3 => (3 * SIDE) + 3.5 * SPACING => 310, 10
     4 => (4 * SIDE) + 4.5 * SPACING => 410, 10
-
-    1280, 720 => -1, 1
-    -1 => -0.10
-    1 => -0.05
-    
-    -0.10 => 0
-    -0.05 => 1
-    normalization
   */
   
   makeGrid(){
@@ -181,12 +168,10 @@ class RendererShader {
     gl.useProgram(program);
     this.initializeAttributes(gl, program);
     this.initializeUniforms(gl, program);
-    gl.drawArrays(gl.POINTS, 0, this.pointCount);
-    // window.requestAnimationFrame(render);
     return {gl: gl, program: program};
   }
   parseColor(color){
-    let tokens = color.replace(/[rgb()\s]+/g, "").split(",");
+    let tokens = color.replace(this.PATTERN, "").split(",");
     return {r: Number.parseFloat(tokens[0])/255, g: Number.parseFloat(tokens[1])/255, b: Number.parseFloat(tokens[2])/255};
   }
   /*
@@ -220,8 +205,8 @@ class RendererShader {
     return buffer;
   }
   initializeAttributes(gl, program) {
-    //// aPositions
-    //// aTimes
+    //// aPosition
+    //// aTime
     //// aColor
     //// aNewColor
     let aData = this.createBuffer(
@@ -235,11 +220,6 @@ class RendererShader {
     this.aTimesLoc = gl.getAttribLocation(program, "aTime");
     this.aColorsLoc = gl.getAttribLocation(program, "aColor");
     this.aNewColorsLoc = gl.getAttribLocation(program, "aNewColor");
-
-    gl.vertexAttrib2f(this.aPositionsLoc, 0, 0);
-    gl.vertexAttrib1f(this.aTimesLoc, 0);
-    gl.vertexAttrib3f(this.aColorsLoc, 1, 0, 0);
-    gl.vertexAttrib3f(this.aNewColorsLoc, 0, 1, 0);
 
     this.aBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, this.aBuffer);
@@ -271,10 +251,6 @@ class RendererShader {
     }
   }
   render(time){
-    // attribute positions
-    // attribute times
-    // attribute colors
-    // attribute newColors
     let aData = this.createBuffer(
       this.gridPositions,
       this.animator.createAnimationTimes(time),

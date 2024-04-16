@@ -9,6 +9,7 @@ class GridSpaceState { // A single state of the grid space
     }
     this.x = x;
     this.y = y;
+    this.setKey();
     this.ROWS = rows;
     this.COLS = cols;
     this.free = free;
@@ -22,10 +23,14 @@ class GridSpaceState { // A single state of the grid space
     let clone = new GridSpaceState(0, 0, this.ROWS, this.COLS);
     clone.x = this.x;
     clone.y = this.y;
+    clone.key = this.key;
     clone.free = Array.from(this.free);
     clone.path = Array.from(this.path);
     clone.heuristic = this.heuristic;
     return clone;
+  }
+  setKey(){
+    this.key = this.x + "," + this.y;
   }
   equals(other){
     return this.x == other.x && this.y == other.y;
@@ -38,8 +43,7 @@ class GridSpaceState { // A single state of the grid space
     let array = [];
     let x = xInitial;
     let y = yInitial;
-    array.push({x: x, y: y, distance: 0});
-    for (let i = 0; i < this.path.length; i++) {
+    for (let i = 0; i < this.path.length-1; i++) {
       if (this.path[i] == "Up") {
         x -= 1;
       }
@@ -65,6 +69,7 @@ class GridSpaceState { // A single state of the grid space
     let isValid = false;
     if(this.x > 0 && this.free[this.x-1][this.y] ){
       child.x -= 1;
+      child.setKey();
       child.path.push("Up");
       isValid = true;
     }
@@ -78,6 +83,7 @@ class GridSpaceState { // A single state of the grid space
     let isValid = false;
     if(this.x < this.ROWS-1 && this.free[this.x+1][this.y] ){
       child.x += 1;
+      child.setKey();
       child.path.push("Down");
       isValid = true;
     }
@@ -91,6 +97,7 @@ class GridSpaceState { // A single state of the grid space
     let isValid = false;
     if(this.y > 0 && this.free[this.x][this.y-1] ){
       child.y -= 1;
+      child.setKey();
       child.path.push("Left");
       isValid = true;
     }
@@ -104,6 +111,7 @@ class GridSpaceState { // A single state of the grid space
     let isValid = false;
     if(this.y < this.COLS-1 && this.free[this.x][this.y+1] ){
       child.y += 1;
+      child.setKey();
       child.path.push("Right");
       isValid = true;
     }
@@ -126,8 +134,8 @@ class GridSpaceState { // A single state of the grid space
     this.heuristic = Math.abs(this.x - goal.x) + Math.abs(this.y - goal.y);
   }
   /* 
-  if < 0 then this > other
-  if > 0 then this < other
+  if result < 0 then state > other => state is worse than other
+  if result > 0 then state < other => state is better than other
   */
   compare(state, other){ // public
     return other.heuristic - state.heuristic; // descending order so i can use pop() to extract minimum

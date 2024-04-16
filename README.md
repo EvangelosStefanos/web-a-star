@@ -17,15 +17,10 @@
   The Manhattan distance function $D = abs(x_1 - x_2) + abs(y_1 - y_2)$ is used as the heuristic function for the algorithm.
 
 ## Search Frontier
-  Good A* algorithm implementations will use a Heap data structure for the Search Frontier. However, there is no such data structure in Javascript so I simulated one using Javascript `Array`. The array is sorted after every `push()` in descending order. That allows me to use `pop()` to extract the minimum element in the array. Clearly an inferior solution performance-wise to a Heap but the code required was minimal.
-
-  |              |Insert|Delete Min|
-  |--------------|-------------|------|
-  |**Sorted Array**|$O(n^2)$|$O(1)$|
-  |**Heap**        |$O(logn)$         |$O(logn)$|
+  Good A* algorithm implementations will use a Heap data structure for the Search Frontier. However, there is no such data structure in Javascript so I used a Javascript `Map` instead. That means there is $O(n)$ cost (linear search) to find the best state at each step instead of the Heap's $O(logn)$ but children lookup in the Search Frontier costs [sublinear](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map#description) time (maybe even $O(1)$).
 
 ## Visual
-  The implementation also features a graphical user interface made with Bootstrap 5 and a 2d graphical visualization of the way the algorithm works made with WebGL.
+  The implementation also features a graphical user interface made with Bootstrap 5 and a 2d graphical visualization of the way the algorithm works made with WebGL. There is also an additional even better version that utilizes shaders for the graphical visualization.
 
 ## See Also
   [https://qiao.github.io/PathFinding.js/visual/]() Excellent visualization of various search algorithms.
