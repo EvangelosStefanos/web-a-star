@@ -12,7 +12,7 @@
       <div class="m-2"></div>
       <div class="d-flex flex-column align-items-center">
         <div class="ps-2 pe-2 w-100 d-flex flex-row justify-content-between">
-          <a href="shader.html" target="_blank" rel="noopener noreferrer">Shader Version</a>
+          <a href="index.html" target="_blank" rel="noopener noreferrer">Non-Shader Version</a>
           <a href="https://github.com/EvangelosStefanos/web-a-star" target="_blank" rel="noopener noreferrer">Github</a>
         </div>
         <ul class="m-2">
@@ -166,7 +166,7 @@
   function start(){
     document.querySelector("#start").setAttribute("disabled", "");
     // let version = document.getElementById("#version-selector").value;
-    let version = "nonshader";
+    let version = "shader";
     space = new GridSpace(9, 9);
     searchAlgorithm = new Astar(space.INITIAL, space.GOAL, GridSpaceState.prototype.compare);
     if(version == "shader"){

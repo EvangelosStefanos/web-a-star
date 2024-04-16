@@ -25,7 +25,7 @@
   |**Heap**        |$O(logn)$         |$O(logn)$|
 
 ## Visual
-  The implementation also features a visualization of the way the algorithm works made with WebGL.
+  The implementation also features a graphical user interface made with Bootstrap 5 and a 2d graphical visualization of the way the algorithm works made with WebGL.
 
 ## See Also
   [https://qiao.github.io/PathFinding.js/visual/]() Excellent visualization of various search algorithms.

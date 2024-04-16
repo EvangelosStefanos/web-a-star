@@ -53,7 +53,7 @@
       float i = inner(gl_PointCoord);
       float fv =  f(gl_PointCoord, 0.6);
       vec3 c = vColor * i * fv;
-      gl_FragColor = vec4(c.r + r * g, c.g + g, c.b + g, 1.0);
+      gl_FragColor = vec4(c.r + r * g, c.g + r*g, c.b + r*g, 1.0);
       //gl_FragColor = vec4(fv, 0.0, 0.0, 1.0);
     }
   </script>
@@ -68,7 +68,6 @@
       return normalize(x, 0, 1080, -1, 1);
     }
     /*
-      TODO
       80->160 center: 120 (side * 1.5)
       240->320 center: 280 (side * 3.5)
       400->480 center: 440 (side * 5.5)

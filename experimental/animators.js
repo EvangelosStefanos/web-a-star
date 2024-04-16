@@ -23,7 +23,7 @@ function lerp3(startColor, endColor, percentFade){
 }
 function lerp1(percentFade){
   let point = this.lerp3({ red: 0, green: 255, blue: 0 }, { red: 255, green: 0, blue: 0 }, percentFade);
-  return "rgb("+point.red+", "+point.green+", "+point.blue+")";
+  return "rgb( "+point.red+", "+point.green+", "+point.blue+" )";
 }
 
 class AnimatorInstant {
@@ -87,64 +87,87 @@ if on animation path >> animation_time_i - 50 * path_distance >> clamp 0 1
 0   >> 0    -0.05 -0.1  -0.15
 0.1 >> 0.05  0    -0.05 -0.1
 clamp to 0-1
+| x y | t | r g b | r g b |
 */
 class AnimatorShader {
   constructor(initial, goal, blocked, rows, cols){
-    this.colors = create2dArray(rows, cols, "white");
-    this.colors[initial.x][initial.y] = "green";
-    this.colors[goal.x][goal.y] = "red";
-    blocked.forEach(b => this.colors[b.x][b.y] = "black");
+    this.WHITE = "rgb( 255, 255, 255 )";
+    this.GREY = "rgb( 127.5, 127.5, 127.5 )";
+    this.BLACK = "rgb( 0, 0, 0 )";
+    this.RED = "rgb( 255, 0, 0 )";
+    this.GREEN = "rgb( 0, 255, 0 )";
+    this.BLUE = "rgb( 0, 0, 255 )";
+    this.colors = create2dArray(rows, cols, this.WHITE);
+    this.colors[initial.x][initial.y] = this.GREEN;
+    this.colors[goal.x][goal.y] = this.RED;
+    blocked.forEach(b => this.colors[b.x][b.y] = this.BLACK);
     this.animation_times = create2dArray(rows, cols, 0);
     this.animation_durations = create2dArray(rows, cols, 0);
-    this.TRANSITION_DURATION = 300; // ms
-    this.PATH_TRANSITION_DURATION = 500; // ms
-    this.newColors = Array.from(this.colors);
+    this.TRANSITION_DURATION = 400; // ms
+    this.PATH_TRANSITION_DURATION = 400; // ms
+    this.newColors = this.colors.map(x=>x.map(y=>y));
+    this.endTime = Number.POSITIVE_INFINITY;
   }
   searchFrontierTransitions(array){ // search frontier addition transition is white to blue
-    let time = AnimationTimeline.currentTime;
+    let time = performance.now();
     for(let i=0; i<array.length; i++){
       let x = array[i].x;
       let y = array[i].y;
-      if(this.colors[x][y] == "white" && this.animation_durations[x][y] == 0){
+      if(this.colors[x][y] == this.WHITE && this.animation_durations[x][y] == 0){
         this.animation_times[x][y] = time;
         this.animation_durations[x][y] = this.TRANSITION_DURATION;
-        this.newColors[x][y] = "blue";
+        this.newColors[x][y] = this.BLUE;
       }
     }
   }
   closedSetTransitions(array){ // closed set addition transition is blue to grey
-    let time = AnimationTimeline.currentTime;
+    let time = performance.now();
     for(let i=0; i<array.length; i++){
       let x = array[i].x;
       let y = array[i].y;
-      if(this.colors[x][y] == "blue" && this.animation_durations[x][y] == 0){
+      if(this.colors[x][y] == this.BLUE && this.animation_durations[x][y] == 0){
         this.animation_times[x][y] = time;
         this.animation_durations[x][y] = this.TRANSITION_DURATION;
-        this.newColors[x][y] = "grey";
+        this.newColors[x][y] = this.GREY;
       }
     }
   }
+  /*
+  0 duration
+  stagger+duration
+  2*stagger+duration
+  3*
+  
+  100 300
+  0+300
+  100+300
+  200+300
+  300+300
+  400+300
+  */
   pathTransitions(path){
-    let time = AnimationTimeline.currentTime;
-    let STAGGER = 50; // ms
-    path.forEach(p=>{
-        this.animation_times[p.x][p.y] = time - STAGGER * path.distance;
-        this.animation_durations[x][y] = this.PATH_TRANSITION_DURATION;
-        this.newColors[p.x][p.y] = this.lerp1(p.distance / (path.length-1));
-    })
+    let STAGGER = 200; // ms
+    let time = performance.now();
+    this.endTime = time + this.PATH_TRANSITION_DURATION + STAGGER * (path.length-1);
+    for(let i=1; i<path.length-1; i++){
+      this.animation_times[path[i].x][path[i].y] = time + STAGGER * i;
+      this.animation_durations[path[i].x][path[i].y] = this.PATH_TRANSITION_DURATION;
+      this.newColors[path[i].x][path[i].y] = lerp1(i / (path.length-1));
+    }
   }
   createAnimationTimes(time){ // time is total running time in ms
     let times = [];
     for(let i=0; i<this.animation_times.length; i++){
-      times[i] = [];
-      for(let j=0; this.animation_times[i].length; j++){
+      times.push([]);
+      for(let j=0; j<this.animation_times[i].length; j++){
         if(this.animation_durations[i][j] == 0){
+          times[i][j] = 0;
           continue; // animation inactive
         }
         times[i][j] = time - this.animation_times[i][j]; // time elapsed
         times[i][j] = times[i][j] / this.animation_durations[i][j]; // normalized time elapsed
-        times[i][j] = this.clamp(0, 1, times[i][j]); // clamp to 0 1
-        if(times[i][j] == 1){
+        times[i][j] = clamp(0, 1, times[i][j]); // clamp to 0 1
+        if(times[i][j] >= 1){
           this.colors[i][j] = this.newColors[i][j]; // animation active and completed => reset animation status
           this.animation_durations[i][j] = 0;
           times[i][j] = 0;

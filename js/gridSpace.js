@@ -162,6 +162,12 @@ class GridSpace { // Properties of a grid space
     for (let i=0; i<100; i++){
       let x = getRandomInt(this.ROWS);
       let y = getRandomInt(this.COLS);
+      if(this.INITIAL && this.INITIAL.x == x && this.INITIAL.y == y){
+        continue;
+      }
+      if(this.GOAL && this.GOAL.x == x && this.GOAL.y == y){
+        continue;
+      }
       if(this.BLOCKED.filter(b => b.x == x && b.y == y) == 0){
         return new GridSpaceState(x, y, this.ROWS, this.COLS, this.BLOCKED);
       }
