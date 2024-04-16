@@ -165,6 +165,7 @@ class GridSpace { // Properties of a grid space
     this.INITIAL = this.createRandomState();
     this.INITIAL.setBlocked(this.BLOCKED);
     this.GOAL = this.createRandomState();
+    this.INITIAL.evaluate(this.GOAL);
   }
   createRandomState(){
     for (let i=0; i<100; i++){

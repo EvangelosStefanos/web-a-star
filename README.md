@@ -23,4 +23,4 @@
   The implementation also features a graphical user interface made with Bootstrap 5 and a 2d graphical visualization of the way the algorithm works made with WebGL. There is also an additional even better version that utilizes shaders for the graphical visualization.
 
 ## See Also
-  [https://qiao.github.io/PathFinding.js/visual/]() Excellent visualization of various search algorithms.
+  [https://qiao.github.io/PathFinding.js/visual/](https://qiao.github.io/PathFinding.js/visual/) Excellent visualization of various search algorithms.
