@@ -131,7 +131,7 @@ class GridSpaceState { // A single state of the grid space
     return actions.filter(x => x.isValid).map(x => x.child);
   }
   evaluate(goal) {
-    this.heuristic = Math.abs(this.x - goal.x) + Math.abs(this.y - goal.y);
+    this.heuristic = this.path.length + Math.abs(this.x - goal.x) + Math.abs(this.y - goal.y);
   }
   /* 
   if result < 0 then state > other => state is worse than other
