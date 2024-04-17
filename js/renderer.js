@@ -77,7 +77,7 @@ class RendererShader {
     this.done = false;
     this.PATTERN = /[rgb()\s]+/g;
     //// canvas resolution ////
-    this.WIDTH = 800;
+    this.WIDTH = 1080;
     let ASPECTRATIO = 1;
     this.HEIGHT = ASPECTRATIO * this.WIDTH;
     //// grid ////
