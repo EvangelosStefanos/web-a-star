@@ -14,7 +14,7 @@ class GridSpaceState { // A single state of the grid space
     this.COLS = cols;
     this.free = free;
     this.path = [];
-    this.heuristic = Number.POSITIVE_INFINITY;
+    this.totalCost = Number.POSITIVE_INFINITY; // cost to be reached from initial state + estimated cost (heuristic) to reach goal state
   }
   setBlocked(blocked){
     blocked.forEach(b=>{this.free[b.x][b.y] = false;});
@@ -26,7 +26,7 @@ class GridSpaceState { // A single state of the grid space
     clone.key = this.key;
     clone.free = Array.from(this.free);
     clone.path = Array.from(this.path);
-    clone.heuristic = this.heuristic;
+    clone.totalCost = this.totalCost;
     return clone;
   }
   setKey(){
@@ -131,14 +131,14 @@ class GridSpaceState { // A single state of the grid space
     return actions.filter(x => x.isValid).map(x => x.child);
   }
   evaluate(goal) {
-    this.heuristic = this.path.length + Math.abs(this.x - goal.x) + Math.abs(this.y - goal.y);
+    this.totalCost = this.path.length + Math.abs(this.x - goal.x) + Math.abs(this.y - goal.y);
   }
   /* 
   if result < 0 then state > other => state is worse than other
   if result > 0 then state < other => state is better than other
   */
-  compare(state, other){ // public
-    return other.heuristic - state.heuristic; // descending order so i can use pop() to extract minimum
+  compare(state, other){
+    return other.totalCost - state.totalCost; // descending order so i can use pop() to extract minimum
   }
 }
 

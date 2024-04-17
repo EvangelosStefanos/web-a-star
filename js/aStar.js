@@ -17,7 +17,7 @@ class Astar {
     this.search_frontier.push(item);
     this.search_frontier.sort(this.comparator);
   }
-  mapPop(map){
+  mapExtractBest(map){
     let bestState = undefined;
     let bestKey = undefined;
     for(const [k, v] of map){
@@ -53,9 +53,10 @@ class Astar {
       return this.done;
     }
 
-    let state = this.mapPop(this.search_frontier); // Acquire the best state from the search frontier
+    let state = this.mapExtractBest(this.search_frontier); // Acquire the best state from the search frontier
     if(this.closed_set.has(state.key)){
-      return this.done; // If state has already been visited continue the next iteration
+      throw new Error("Accessing state that is already in the Closed Set.");
+      // return this.done; // If state has already been visited continue the next iteration
     }
     
     if(state.equals(this.goal)){ //If state is final, print the path and exit
@@ -70,10 +71,10 @@ class Astar {
     for(let i=0; i<children.length; i++){ // Evaluate all children and add them to the search frontier
       children[i].evaluate(this.goal);
       if(this.mapHasBetterOrEqual(this.search_frontier, children[i])){
-        continue; // if child already in search_frontier with a better heuristic then skip
+        continue; // if child already in search_frontier with a better (lower) cost then skip
       }
       if(this.mapHasBetterOrEqual(this.closed_set, children[i])){
-        continue; // if child already in closed_set with a better heuristic then skip
+        continue; // if child already in closed_set with a better (lower) cost then skip
       }
       // this.searchFrontierAdd(children[i]);
       this.search_frontier.set(children[i].key, children[i]);

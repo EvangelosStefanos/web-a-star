@@ -3,6 +3,12 @@
   
   See it in action [**_here_**](https://evangelosstefanos.github.io/web-a-star/).
 
+  >Shader version
+  ![Preview Shader](imgs/shader-preview.png)
+
+  >Non-Shader version
+  ![Preview Non-Shader](imgs/nonShader-preview.png)
+  
 ## State Space
   The state space is composed of a completely static 2-dimensional grid.
 
