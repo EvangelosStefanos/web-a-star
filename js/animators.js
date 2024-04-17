@@ -33,6 +33,7 @@ class AnimatorInstant {
     this.colors[goal.x][goal.y] = "red";
     blocked.forEach(b => this.colors[b.x][b.y] = "black");
     this.path = [];
+    this.endTime = Number.POSITIVE_INFINITY;
   }
   //// Color Transitions
   transition(colors, x, y, fromColor, toColor){
@@ -65,6 +66,9 @@ class AnimatorInstant {
     }
   }
   pathTransitions(path){
+    let time = performance.now();
+    let TIME_PER_SEGMENT = 500;
+    this.endTime = time + TIME_PER_SEGMENT * path.length;
     this.path = path.map(p=>{
         return {x: p.x, y: p.y, color: lerp1(p.distance / (path.length+1))}; //this.pathColors.push(lerp1(p.distance / (path.length-1)));
     })

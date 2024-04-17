@@ -4,12 +4,28 @@ function normalize5(x, xMin, xMax, newMin, newMax){
 function normalize(x, xMax){
   return normalize5(x, 0, xMax, -1, 1);
 }
+function replaceCanvas(){
+  // get old canvas
+  const canvasOld = document.getElementById("canvas");
+  // create new canvas
+  let canvas = document.createElement("canvas");
+  canvas.className = canvasOld.className;
+  canvas.id = canvasOld.id;
+  // prepare to add new canvas
+  const parent = document.getElementById("outer");
+  const child = document.getElementById("inner");
+  // remove old canvas
+  canvasOld.remove();
+  // add new canvas
+  parent.insertBefore(canvas, child);
+  return canvas;
+}
 
 class RendererSimple {
   constructor(rows, cols, animator){
     this.done = false;
     this.time_start = undefined;
-    const canvas = document.querySelector("#canvas");
+    const canvas = replaceCanvas();
     canvas.width=800;
     canvas.height=800;
     this.gl = canvas.getContext("2d");
@@ -47,10 +63,9 @@ class RendererSimple {
       let p_i = this.animator.path[i];
       this.animator.colors[p_i.x][p_i.y] = p_i.color;
     }
-    if (time_elapsed > this.TIME_PER_SEGMENT * this.animator.path.length) {
+    if (time_elapsed > this.animator.endTime) {
       // animation time is more than max animation time
       this.time_start = undefined;
-      document.querySelector("#start").removeAttribute("disabled", "");
       this.done = true;
     }
     // draw path animation end
@@ -124,7 +139,8 @@ class RendererShader {
     return grid;
   }
   getRenderingContext() {
-    const canvas = document.querySelector("canvas");
+    //const canvas = document.querySelector("canvas");
+    const canvas = replaceCanvas();
     canvas.width = this.WIDTH;
     canvas.height = this.HEIGHT;
     let gl =

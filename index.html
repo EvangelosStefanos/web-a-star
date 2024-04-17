@@ -7,29 +7,26 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
   </head>
   <body class="w-100 h-100 overflow-auto">
-    <div class="h-100 overflow-auto min-w-fit d-flex flex-column-reverse justify-content-start align-items-center flex-xl-row justify-content-xl-center align-items-xl-center">
-      <canvas class="m-2" id="canvas"></canvas>
-      <div class="m-2"></div>
-      <div class="d-flex flex-column align-items-center">
-        <div class="ps-2 pe-2 w-100 d-flex flex-row justify-content-between">
-          <a href="shader.html" target="_blank" rel="noopener noreferrer">Shader Version</a>
+    <div id="outer" class="h-100 overflow-auto min-w-fit d-flex flex-column justify-content-start align-items-center flex-xl-row-reverse justify-content-xl-center align-items-xl-center">
+      <div class="p-2 d-flex flex-column align-items-center">
+        <div class="w-100 d-flex flex-row justify-content-end">
+          <!--<a href="index.html" target="_blank" rel="noopener noreferrer">Non-Shader Version</a>-->
           <a href="https://github.com/EvangelosStefanos/web-a-star" target="_blank" rel="noopener noreferrer">Github</a>
         </div>
-        <ul class="m-2">
+        <ul>
           <li>The <span class="green">Initial</span> state is <span class="green">Green</span></li>
           <li>The <span class="red">Goal</span> state is <span class="red">Red</span></li>
           <li>States in the <span class="blue">Search Frontier</span> are <span class="blue">Blue</span></li>
           <li>States in the <span class="grey">Closed Set</span> are <span class="grey">Grey</span></li>
           <li><span class="black">Blocked</span> states are <span class="black">Black</span></li>
         </ul>
-        <!--
-          <select id="#version-selector" class="form-select" aria-label="Select Program Version">
-            <option selected value="shader">Shader Version</option>
-            <option value="nonshader">Non-Shader Version</option>
-          </select>
-        -->
-        <button onclick="start()" id="start" class="btn btn-lg btn-primary" type="button">Start</button> <!-- 1.[Set the start flag] 2.[Dynamically bind the disable attribute when start flag is true] -->
+        <div class="w-100 d-flex flex-row justify-content-between">
+          <button onclick="startV1()" id="startV1" class="btn btn-lg btn-primary" type="button">StartV1</button>
+          <button onclick="startV2()" id="startV2" class="btn btn-lg btn-primary" type="button">StartV2</button>
+        </div>
       </div>
+      <div id="inner" class="p-2"></div>
+      <canvas id="canvas" class="p-2" id="canvas"></canvas>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
     <script src="js/gridSpace.js"></script>
@@ -127,9 +124,9 @@
     return step(0.0, - distance(vec2(0.0), xy) + animationSpeedModifier * 1.5 * vTime);
   }
   void main() {
-    float outerBorderf = -1. * outerBorder(gl_PointCoord) + 1.; // the outer black border
-    float innerBorderf = innerBorder(gl_PointCoord); // the inner white border
-    float innerSquaref = inner(gl_PointCoord); // the inner square area
+    // float outerBorderf = -1. * outerBorder(gl_PointCoord) + 1.; // the outer black border
+    // float innerBorderf = innerBorder(gl_PointCoord); // the inner white border
+    // float innerSquaref = inner(gl_PointCoord); // the inner square area
     float innerCirclef =  circle(gl_PointCoord, 1.); // the inner circle area
     // outerBorder * innerBorder + vColor * innerSquare + vNewColor * innerSquare * fv
     // innerSquare * (vColor + vNewColor * fv)
@@ -144,6 +141,7 @@
       innerColor3v.g,
       innerColor3v.b,
       1.0
+      //ss.x*ss.y // really nice borderless look
     );
   }
 </script>
@@ -157,35 +155,38 @@
     time = performance.now();
     renderer.render(time);
     if(time > renderer.animator.endTime){
-      document.querySelector("#start").removeAttribute("disabled", "");
+      document.querySelector("#startV1").removeAttribute("disabled", "");
+      document.querySelector("#startV2").removeAttribute("disabled", "");
       return;
     }
     window.requestAnimationFrame(render);
   }
-
-  function start(){
-    document.querySelector("#start").setAttribute("disabled", "");
-    // let version = document.getElementById("#version-selector").value;
-    let version = "nonshader";
+  function loop() {
+    let done = searchAlgorithm.step();
+    animator.searchFrontierTransitions(searchAlgorithm.search_frontier_additions);
+    animator.closedSetTransitions(searchAlgorithm.closed_set_additions);
+    if (done) {
+      animator.pathTransitions(searchAlgorithm.convertedPath);
+      clearInterval(intervalId);
+    }
+  }
+  function startV1(){
+    document.querySelector("#startV1").setAttribute("disabled", "");
+    document.querySelector("#startV2").setAttribute("disabled", "");
     space = new GridSpace(9, 9);
     searchAlgorithm = new Astar(space.INITIAL, space.GOAL, GridSpaceState.prototype.compare);
-    if(version == "shader"){
-      animator = new AnimatorShader(space.INITIAL, space.GOAL, space.BLOCKED, space.ROWS, space.COLS);
-      renderer = new RendererShader(space.ROWS, space.COLS, animator);      
-    }
-    else{
-      animator = new AnimatorInstant(space.INITIAL, space.GOAL, space.BLOCKED, space.ROWS, space.COLS);
-      renderer = new RendererSimple(space.ROWS, space.COLS, animator);
-    }
-    function loop() {
-      let done = searchAlgorithm.step();
-      animator.searchFrontierTransitions(searchAlgorithm.search_frontier_additions);
-      animator.closedSetTransitions(searchAlgorithm.closed_set_additions);
-      if(done){
-        animator.pathTransitions(searchAlgorithm.convertedPath);
-        clearInterval(intervalId);
-      }
-    }
+    animator = new AnimatorInstant(space.INITIAL, space.GOAL, space.BLOCKED, space.ROWS, space.COLS);
+    renderer = new RendererSimple(space.ROWS, space.COLS, animator);
+    intervalId = setInterval(loop, 800);
+    window.requestAnimationFrame(render);
+  }  
+  function startV2() {
+    document.querySelector("#startV1").setAttribute("disabled", "");
+    document.querySelector("#startV2").setAttribute("disabled", "");
+    space = new GridSpace(9, 9);
+    searchAlgorithm = new Astar(space.INITIAL, space.GOAL, GridSpaceState.prototype.compare);
+    animator = new AnimatorShader(space.INITIAL, space.GOAL, space.BLOCKED, space.ROWS, space.COLS);
+    renderer = new RendererShader(space.ROWS, space.COLS, animator);
     intervalId = setInterval(loop, 800);
     window.requestAnimationFrame(render);
   }  

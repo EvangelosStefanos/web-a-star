@@ -26,7 +26,7 @@
   Good A* algorithm implementations will use a Heap data structure for the Search Frontier. However, there is no such data structure in Javascript so I used a Javascript `Map` instead. That means there is $O(n)$ cost to find (by linear search) and extract the best state at each step instead of the Heap's $O(logn)$ but state lookup in the Search Frontier costs [sublinear](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map#description) time (maybe even $O(1)$).
 
 ## Visual
-  The implementation also features a graphical user interface made with Bootstrap 5 and a 2d graphical visualization of the way the algorithm works made with WebGL. There is also an additional even better version that utilizes shaders for the graphical visualization.
+  The implementation also features a graphical user interface made with Bootstrap 5 and a 2d graphical visualization of the way the algorithm works made with WebGL. There is also an even better version that utilizes shaders for the graphical visualization.
 
 ## See Also
   [https://qiao.github.io/PathFinding.js/visual/](https://qiao.github.io/PathFinding.js/visual/) Excellent visualization of various search algorithms.
