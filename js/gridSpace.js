@@ -40,10 +40,10 @@ class GridSpaceState { // A single state of the grid space
     console.log(this.path.join("->"));
   }
   convert_path(xInitial, yInitial) {
-    let array = [];
     let x = xInitial;
     let y = yInitial;
-    for (let i = 0; i < this.path.length-1; i++) {
+    let array = [{x: xInitial, y: yInitial}];
+    for (let i = 0; i < this.path.length; i++) {
       if (this.path[i] == "Up") {
         x -= 1;
       }
@@ -59,7 +59,7 @@ class GridSpaceState { // A single state of the grid space
       else{
         console.log("Error. Should never happen. Invalid value in path.");
       }
-      array.push({x: x, y: y, distance: i+1});
+      array.push({x: x, y: y});
     }
     return array;
   }
@@ -181,7 +181,8 @@ class GridSpace { // Properties of a grid space
         return new GridSpaceState(x, y, this.ROWS, this.COLS, this.BLOCKED);
       }
     }
-    console.log("Critical Error. Cannot create valid random state.");
-    return new GridSpaceState(0, 0, this.ROWS, this.COLS, this.BLOCKED);
+    let msg = "Critical Error. Cannot create valid random state. Should never happen.";
+    console.log(msg);
+    throw new Error(msg);
   }
 }

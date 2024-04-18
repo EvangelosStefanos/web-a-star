@@ -69,8 +69,8 @@ class AnimatorInstant {
     let time = performance.now();
     let TIME_PER_SEGMENT = 500;
     this.endTime = time + TIME_PER_SEGMENT * path.length;
-    this.path = path.map(p=>{
-        return {x: p.x, y: p.y, color: lerp1(p.distance / (path.length+1))}; //this.pathColors.push(lerp1(p.distance / (path.length-1)));
+    this.path = path.map(p, i=>{
+        return {x: p.x, y: p.y, color: lerp1(i / (path.length-1))}; //this.pathColors.push(lerp1(p.distance / (path.length-1)));
     })
   }
 }
@@ -155,7 +155,7 @@ class AnimatorShader {
     for(let i=0; i<path.length; i++){
       this.animation_times[path[i].x][path[i].y] = time + STAGGER * i;
       this.animation_durations[path[i].x][path[i].y] = this.PATH_TRANSITION_DURATION;
-      this.newColors[path[i].x][path[i].y] = lerp1( (i + 1) / (path.length + 1) );
+      this.newColors[path[i].x][path[i].y] = lerp1( i / (path.length - 1) );
     }
   }
   createAnimationTimes(time){ // time is total running time in ms

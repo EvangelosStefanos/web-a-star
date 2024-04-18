@@ -21,8 +21,8 @@
           <li><span class="black">Blocked</span> states are <span class="black">Black</span></li>
         </ul>
         <div class="w-100 d-flex flex-row justify-content-between">
-          <button onclick="startV1()" id="startV1" class="btn btn-lg btn-primary" type="button">StartV1</button>
-          <button onclick="startV2()" id="startV2" class="btn btn-lg btn-primary" type="button">StartV2</button>
+          <button onclick="aStar()" id="startV1" class="btn btn-lg btn-primary" type="button">A*</button>
+          <button onclick="idAstar()" id="startV2" class="btn btn-lg btn-primary" type="button">IDA*</button>
         </div>
       </div>
       <div id="inner" class="p-2"></div>
@@ -31,6 +31,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
     <script src="js/gridSpace.js"></script>
     <script src="js/aStar.js"></script>
+    <script src="js/idAstar.js"></script>
     <script src="js/animators.js"></script>
     <script src="js/renderer.js"></script>
   </body>
@@ -45,7 +46,6 @@
   }
   canvas{
     display: inline-block;
-    min-width: none;
     width: min(90vw, 90vh);
     max-width: 1080px;
     aspect-ratio: 1/1;
@@ -55,6 +55,9 @@
     font-size: x-large;
     padding: 20px 40px;
     border: 2px dashed black;
+  }
+  button {
+    width: 8rem;
   }
   .green{
     color: green;
@@ -164,10 +167,10 @@
   }
   function loop() {
     let done = searchAlgorithm.step();
-    animator.searchFrontierTransitions(searchAlgorithm.search_frontier_additions);
-    animator.closedSetTransitions(searchAlgorithm.closed_set_additions);
+    animator.searchFrontierTransitions(searchAlgorithm.searchFrontierAdditions);
+    animator.closedSetTransitions(searchAlgorithm.closedSetAdditions);
     if (done) {
-      animator.pathTransitions(searchAlgorithm.convertedPath);
+      animator.pathTransitions(searchAlgorithm.path);
       clearInterval(intervalId);
     }
   }
@@ -181,11 +184,21 @@
     intervalId = setInterval(loop, 800);
     window.requestAnimationFrame(render);
   }  
-  function startV2() {
+  function aStar() {
     document.querySelector("#startV1").setAttribute("disabled", "");
     document.querySelector("#startV2").setAttribute("disabled", "");
     space = new GridSpace(9, 9);
     searchAlgorithm = new Astar(space.INITIAL, space.GOAL, GridSpaceState.prototype.compare);
+    animator = new AnimatorShader(space.INITIAL, space.GOAL, space.BLOCKED, space.ROWS, space.COLS);
+    renderer = new RendererShader(space.ROWS, space.COLS, animator);
+    intervalId = setInterval(loop, 800);
+    window.requestAnimationFrame(render);
+  }  
+  function idAstar() {
+    document.querySelector("#startV1").setAttribute("disabled", "");
+    document.querySelector("#startV2").setAttribute("disabled", "");
+    space = new GridSpace(9, 9);
+    searchAlgorithm = new IDAstar(space.INITIAL, space.GOAL);
     animator = new AnimatorShader(space.INITIAL, space.GOAL, space.BLOCKED, space.ROWS, space.COLS);
     renderer = new RendererShader(space.ROWS, space.COLS, animator);
     intervalId = setInterval(loop, 800);
