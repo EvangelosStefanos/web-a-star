@@ -128,7 +128,8 @@ class AnimatorShader {
     for(let i=0; i<array.length; i++){
       let x = array[i].x;
       let y = array[i].y;
-      if(this.colors[x][y] == this.BLUE && this.animation_durations[x][y] == 0){
+      let blueOrWhite = this.colors[x][y] == this.BLUE || this.colors[x][y] == this.WHITE;
+      if(blueOrWhite && this.animation_durations[x][y] == 0){
         this.animation_times[x][y] = time;
         this.animation_durations[x][y] = this.TRANSITION_DURATION;
         this.newColors[x][y] = this.GREY;

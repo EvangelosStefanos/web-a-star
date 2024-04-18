@@ -27,7 +27,7 @@ class IDAstar {
       if(visited.has(children[i].key)){
         continue;
       }
-      this.searchFrontierAdditions.push(children[i]);
+      this.closedSetAdditions.push(children[i]);
       visited.set(children[i].key, true);
       path.push(children[i]);
       let t = this.search(path, g + 1, limit, visited);
@@ -43,7 +43,7 @@ class IDAstar {
     return min;
   }
   step() {
-    this.searchFrontierAdditions = [this.INITIAL];
+    this.closedSetAdditions = [this.INITIAL];
     let t = this.search(this.path, 0, this.limit, this.visited);
     if(t == "FOUND"){
       return true;

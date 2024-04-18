@@ -21,8 +21,8 @@
           <li><span class="black">Blocked</span> states are <span class="black">Black</span></li>
         </ul>
         <div class="w-100 d-flex flex-row justify-content-between">
-          <button onclick="aStar()" id="startV1" class="btn btn-lg btn-primary" type="button">A*</button>
-          <button onclick="idAstar()" id="startV2" class="btn btn-lg btn-primary" type="button">IDA*</button>
+          <button onclick="aStar()" id="startV1" class="btn btn-lg btn-primary" type="button" title="Run A*" data-bs-toggle="tooltip" data-bs-placement="bottom">A*</button>
+          <button onclick="idAstar()" id="startV2" class="btn btn-lg btn-primary" type="button" title="Run IDA*" data-bs-toggle="tooltip" data-bs-placement="bottom">IDA*</button>
         </div>
       </div>
       <div id="inner" class="p-2"></div>
@@ -150,6 +150,11 @@
   }
 </script>
 <script>
+  //// Enable Tooltips
+  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+  })
   let intervalId;
   let space;
   let searchAlgorithm;
