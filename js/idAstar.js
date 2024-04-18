@@ -1,3 +1,6 @@
+/**
+ * Based on https://en.wikipedia.org/wiki/Iterative_deepening_A*#Pseudocode
+ */
 class IDAstar {
   constructor(initial, goal){
     this.INITIAL = initial;
@@ -9,12 +12,12 @@ class IDAstar {
     this.searchFrontierAdditions = [];
     this.closedSetAdditions = [];
   }
-  f(state){
+  heuristic(state){
     return Math.abs(state.x - this.GOAL.x) + Math.abs(state.y - this.GOAL.y);
   }
   search(path, g, limit, visited){
     let state = path[path.length-1];
-    let f = g + this.f(state);
+    let f = g + this.heuristic(state);
     if(f > limit){
       return f;
     }

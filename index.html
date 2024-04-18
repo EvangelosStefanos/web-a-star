@@ -175,11 +175,16 @@
     animator.searchFrontierTransitions(searchAlgorithm.searchFrontierAdditions);
     animator.closedSetTransitions(searchAlgorithm.closedSetAdditions);
     if (done) {
-      animator.pathTransitions(searchAlgorithm.path);
+      if(animator instanceof AnimatorShader){
+        animator.stack.push(searchAlgorithm.path);
+      }
+      else{
+        animator.pathTransitions(searchAlgorithm.path);
+      }
       clearInterval(intervalId);
     }
   }
-  function startV1(){
+  function startV1(){ // unused
     document.querySelector("#startV1").setAttribute("disabled", "");
     document.querySelector("#startV2").setAttribute("disabled", "");
     space = new GridSpace(9, 9);

@@ -110,6 +110,8 @@ class AnimatorShader {
     this.PATH_TRANSITION_DURATION = 400; // ms
     this.newColors = this.colors.map(x=>x.map(y=>y));
     this.endTime = Number.POSITIVE_INFINITY;
+    this.stack = [];
+    this.animating = 0;
   }
   searchFrontierTransitions(array){ // search frontier addition transition is white to blue
     let time = performance.now();
@@ -120,6 +122,7 @@ class AnimatorShader {
         this.animation_times[x][y] = time;
         this.animation_durations[x][y] = this.TRANSITION_DURATION;
         this.newColors[x][y] = this.BLUE;
+        this.animating += 1;
       }
     }
   }
@@ -133,6 +136,7 @@ class AnimatorShader {
         this.animation_times[x][y] = time;
         this.animation_durations[x][y] = this.TRANSITION_DURATION;
         this.newColors[x][y] = this.GREY;
+        this.animating += 1;
       }
     }
   }
@@ -157,9 +161,14 @@ class AnimatorShader {
       this.animation_times[path[i].x][path[i].y] = time + STAGGER * i;
       this.animation_durations[path[i].x][path[i].y] = this.PATH_TRANSITION_DURATION;
       this.newColors[path[i].x][path[i].y] = lerp1( i / (path.length - 1) );
+      this.animating += 1;
     }
   }
   createAnimationTimes(time){ // time is total running time in ms
+    if(this.animating == 0 && this.stack.length > 0){
+      this.pathTransitions(this.stack[this.stack.length-1]);
+      this.stack.pop();
+    }
     let times = [];
     for(let i=0; i<this.animation_times.length; i++){
       times.push([]);
@@ -175,6 +184,7 @@ class AnimatorShader {
           this.colors[i][j] = this.newColors[i][j]; // animation active and completed => reset animation status
           this.animation_durations[i][j] = 0;
           times[i][j] = 0;
+          this.animating -= 1;
         }
       }
     }
