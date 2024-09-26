@@ -213,7 +213,7 @@
     document.querySelector("#startV2").setAttribute("disabled", "");
     space = new GridSpace(9, 9);
     searchAlgorithm = new Astar(space.INITIAL, space.GOAL, GridSpaceState.prototype.compare);
-    animator = new AnimatorShader(space.INITIAL, space.GOAL, space.BLOCKED, space.ROWS, space.COLS);
+    animator = new AnimatorShader(space.INITIAL, space.GOAL, space.BLOCKED, space.ROWS, space.COLS, simulationStepTimeMillis);
     renderer = new RendererShader(space.ROWS, space.COLS, animator);
     window.requestAnimationFrame(render);
   }  
@@ -222,7 +222,7 @@
     document.querySelector("#startV2").setAttribute("disabled", "");
     space = new GridSpace(9, 9);
     searchAlgorithm = new IDAstar(space.INITIAL, space.GOAL);
-    animator = new AnimatorShader(space.INITIAL, space.GOAL, space.BLOCKED, space.ROWS, space.COLS);
+    animator = new AnimatorShader(space.INITIAL, space.GOAL, space.BLOCKED, space.ROWS, space.COLS, simulationStepTimeMillis);
     renderer = new RendererShader(space.ROWS, space.COLS, animator);
     window.requestAnimationFrame(render);
   }  
