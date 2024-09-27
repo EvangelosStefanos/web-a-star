@@ -93,7 +93,7 @@ clamp to 0-1
 | x y | t | r g b | r g b |
 */
 class AnimatorShader {
-  constructor(initial, goal, blocked, rows, cols){
+  constructor(initial, goal, blocked, rows, cols, simulationStepTimeMillis){
     this.WHITE = "rgb( 255, 255, 255 )";
     this.GREY = "rgb( 127.5, 127.5, 127.5 )";
     this.BLACK = "rgb( 0, 0, 0 )";
@@ -106,8 +106,9 @@ class AnimatorShader {
     blocked.forEach(b => this.colors[b.x][b.y] = this.BLACK);
     this.animation_times = create2dArray(rows, cols, 0);
     this.animation_durations = create2dArray(rows, cols, 0);
-    this.TRANSITION_DURATION = 400; // ms
-    this.PATH_TRANSITION_DURATION = 400; // ms
+    this.TRANSITION_DURATION = clamp(0, 1000, 0.8 * simulationStepTimeMillis); // ms
+    this.PATH_TRANSITION_DURATION = clamp(0, 1000, 0.8 * simulationStepTimeMillis); // ms
+    this.STAGGER = clamp(0, 1000, 0.25 * this.PATH_TRANSITION_DURATION); // ms
     this.newColors = this.colors.map(x=>x.map(y=>y));
     this.endTime = Number.POSITIVE_INFINITY;
     this.stack = [];
@@ -126,7 +127,7 @@ class AnimatorShader {
       }
     }
   }
-  closedSetTransitions(array){ // closed set addition transition is blue to grey
+  closedSetTransitions(array){ // closed set addition transition is white/blue to grey
     let time = performance.now();
     for(let i=0; i<array.length; i++){
       let x = array[i].x;
@@ -154,11 +155,10 @@ class AnimatorShader {
   400+300
   */
   pathTransitions(path){
-    let STAGGER = 200; // ms
     let time = performance.now();
-    this.endTime = time + this.PATH_TRANSITION_DURATION + STAGGER * path.length;
+    this.endTime = time + this.PATH_TRANSITION_DURATION + this.STAGGER * path.length;
     for(let i=0; i<path.length; i++){
-      this.animation_times[path[i].x][path[i].y] = time + STAGGER * i;
+      this.animation_times[path[i].x][path[i].y] = time + this.STAGGER * i;
       this.animation_durations[path[i].x][path[i].y] = this.PATH_TRANSITION_DURATION;
       this.newColors[path[i].x][path[i].y] = lerp1( i / (path.length - 1) );
       this.animating += 1;
