@@ -156,20 +156,31 @@
   var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
     return new bootstrap.Tooltip(tooltipTriggerEl)
   })
-  let intervalId;
   let space;
   let searchAlgorithm;
   let animator;
   let renderer;
   let searchTime = 0;
-  function render(time) {
-    time = performance.now();
-    renderer.render(time);
-    if(time > renderer.animator.endTime){
-      document.querySelector("#startV1").removeAttribute("disabled", "");
-      document.querySelector("#startV2").removeAttribute("disabled", "");
-      return;
+  let timeAccumulatedMillis = 0;
+  let simulationStepTimeMillis = 500;
+  let simulationStepCap = 10;
+  let timeAccumulatedMillisCap = simulationStepCap * simulationStepTimeMillis;
+  let previousFrameTime = null;
+  function render(ignoredTime) {
+    let currentFrameTime = performance.now()
+    if(previousFrameTime == null){
+      previousFrameTime = currentFrameTime;
     }
+    let timeSinceLastFrameMillis = currentFrameTime - previousFrameTime;
+    if(timeAccumulatedMillis < timeAccumulatedMillisCap){
+      timeAccumulatedMillis += timeSinceLastFrameMillis;
+    }
+    while(timeAccumulatedMillis > simulationStepTimeMillis){
+      loop(); // simulationStep
+      timeAccumulatedMillis -= simulationStepTimeMillis;
+    }
+    renderer.render(currentFrameTime);
+    previousFrameTime = currentFrameTime;
     window.requestAnimationFrame(render);
   }
   function loop() {
@@ -186,9 +197,11 @@
       else{
         animator.pathTransitions(searchAlgorithm.path);
       }
-      clearInterval(intervalId);
+      document.querySelector("#startV1").removeAttribute("disabled", "");
+      document.querySelector("#startV2").removeAttribute("disabled", "");
     }
   }
+  /*
   function startV1(){ // unused
     document.querySelector("#startV1").setAttribute("disabled", "");
     document.querySelector("#startV2").setAttribute("disabled", "");
@@ -198,7 +211,8 @@
     renderer = new RendererSimple(space.ROWS, space.COLS, animator);
     intervalId = setInterval(loop, 800);
     window.requestAnimationFrame(render);
-  }  
+  }
+  */ 
   function aStar() {
     document.querySelector("#startV1").setAttribute("disabled", "");
     document.querySelector("#startV2").setAttribute("disabled", "");
@@ -207,7 +221,6 @@
     searchAlgorithm = new Astar(space.INITIAL, space.GOAL, GridSpaceState.prototype.compare);
     animator = new AnimatorShader(space.INITIAL, space.GOAL, space.BLOCKED, space.ROWS, space.COLS);
     renderer = new RendererShader(space.ROWS, space.COLS, animator);
-    intervalId = setInterval(loop, 800);
     window.requestAnimationFrame(render);
   }  
   function idAstar() {
@@ -218,7 +231,6 @@
     searchAlgorithm = new IDAstar(space.INITIAL, space.GOAL);
     animator = new AnimatorShader(space.INITIAL, space.GOAL, space.BLOCKED, space.ROWS, space.COLS);
     renderer = new RendererShader(space.ROWS, space.COLS, animator);
-    intervalId = setInterval(loop, 800);
     window.requestAnimationFrame(render);
   }  
 </script>
