@@ -24,6 +24,7 @@
           <button onclick="aStar()" id="startV1" class="btn btn-lg btn-primary" type="button" title="Run A*" data-bs-toggle="tooltip" data-bs-placement="bottom">A*</button>
           <button onclick="idAstar()" id="startV2" class="btn btn-lg btn-primary" type="button" title="Run IDA*" data-bs-toggle="tooltip" data-bs-placement="bottom">IDA*</button>
         </div>
+        <div>Search time: <span id="search-execution-timer">0</span> ms</div>
       </div>
       <div id="inner" class="p-2"></div>
       <canvas id="canvas" class="p-2" id="canvas"></canvas>
@@ -159,6 +160,7 @@
   let searchAlgorithm;
   let animator;
   let renderer;
+  let searchTime = 0;
   let timeAccumulatedMillis = 0;
   let simulationStepTimeMillis = 500;
   let simulationStepCap = 10;
@@ -182,7 +184,10 @@
     window.requestAnimationFrame(render);
   }
   function loop() {
+    let startTime = performance.now();
     let done = searchAlgorithm.step();
+    searchTime += performance.now() - startTime;
+    document.getElementById('search-execution-timer').innerHTML = searchTime;
     animator.searchFrontierTransitions(searchAlgorithm.searchFrontierAdditions);
     animator.closedSetTransitions(searchAlgorithm.closedSetAdditions);
     if (done) {
@@ -211,6 +216,7 @@
   function aStar() {
     document.querySelector("#startV1").setAttribute("disabled", "");
     document.querySelector("#startV2").setAttribute("disabled", "");
+    searchTime = 0;
     space = new GridSpace(9, 9);
     searchAlgorithm = new Astar(space.INITIAL, space.GOAL, GridSpaceState.prototype.compare);
     animator = new AnimatorShader(space.INITIAL, space.GOAL, space.BLOCKED, space.ROWS, space.COLS, simulationStepTimeMillis);
@@ -220,6 +226,7 @@
   function idAstar() {
     document.querySelector("#startV1").setAttribute("disabled", "");
     document.querySelector("#startV2").setAttribute("disabled", "");
+    searchTime = 0;
     space = new GridSpace(9, 9);
     searchAlgorithm = new IDAstar(space.INITIAL, space.GOAL);
     animator = new AnimatorShader(space.INITIAL, space.GOAL, space.BLOCKED, space.ROWS, space.COLS, simulationStepTimeMillis);
