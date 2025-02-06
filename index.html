@@ -24,6 +24,7 @@
           <button onclick="aStar()" id="startV1" class="btn btn-lg btn-primary" type="button" title="Run A*" data-bs-toggle="tooltip" data-bs-placement="bottom">A*</button>
           <button onclick="idAstar()" id="startV2" class="btn btn-lg btn-primary" type="button" title="Run IDA*" data-bs-toggle="tooltip" data-bs-placement="bottom">IDA*</button>
         </div>
+        <div>Search time: <span id="search-execution-timer">0</span> ms</div>
       </div>
       <div id="inner" class="p-2"></div>
       <canvas id="canvas" class="p-2" id="canvas"></canvas>
@@ -155,23 +156,38 @@
   var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
     return new bootstrap.Tooltip(tooltipTriggerEl)
   })
-  let intervalId;
   let space;
   let searchAlgorithm;
   let animator;
   let renderer;
-  function render(time) {
-    time = performance.now();
-    renderer.render(time);
-    if(time > renderer.animator.endTime){
-      document.querySelector("#startV1").removeAttribute("disabled", "");
-      document.querySelector("#startV2").removeAttribute("disabled", "");
-      return;
+  let searchTime = 0;
+  let timeAccumulatedMillis = 0;
+  let simulationStepTimeMillis = 500;
+  let simulationStepCap = 10;
+  let timeAccumulatedMillisCap = simulationStepCap * simulationStepTimeMillis;
+  let previousFrameTime = null;
+  function render(ignoredTime) {
+    let currentFrameTime = performance.now()
+    if(previousFrameTime == null){
+      previousFrameTime = currentFrameTime;
     }
+    let timeSinceLastFrameMillis = currentFrameTime - previousFrameTime;
+    if(timeAccumulatedMillis < timeAccumulatedMillisCap){
+      timeAccumulatedMillis += timeSinceLastFrameMillis;
+    }
+    while(timeAccumulatedMillis > simulationStepTimeMillis){
+      loop(); // simulationStep
+      timeAccumulatedMillis -= simulationStepTimeMillis;
+    }
+    renderer.render(currentFrameTime);
+    previousFrameTime = currentFrameTime;
     window.requestAnimationFrame(render);
   }
   function loop() {
+    let startTime = performance.now();
     let done = searchAlgorithm.step();
+    searchTime += performance.now() - startTime;
+    document.getElementById('search-execution-timer').innerHTML = searchTime;
     animator.searchFrontierTransitions(searchAlgorithm.searchFrontierAdditions);
     animator.closedSetTransitions(searchAlgorithm.closedSetAdditions);
     if (done) {
@@ -181,9 +197,11 @@
       else{
         animator.pathTransitions(searchAlgorithm.path);
       }
-      clearInterval(intervalId);
+      document.querySelector("#startV1").removeAttribute("disabled", "");
+      document.querySelector("#startV2").removeAttribute("disabled", "");
     }
   }
+  /*
   function startV1(){ // unused
     document.querySelector("#startV1").setAttribute("disabled", "");
     document.querySelector("#startV2").setAttribute("disabled", "");
@@ -193,25 +211,26 @@
     renderer = new RendererSimple(space.ROWS, space.COLS, animator);
     intervalId = setInterval(loop, 800);
     window.requestAnimationFrame(render);
-  }  
+  }
+  */ 
   function aStar() {
     document.querySelector("#startV1").setAttribute("disabled", "");
     document.querySelector("#startV2").setAttribute("disabled", "");
+    searchTime = 0;
     space = new GridSpace(9, 9);
     searchAlgorithm = new Astar(space.INITIAL, space.GOAL, GridSpaceState.prototype.compare);
-    animator = new AnimatorShader(space.INITIAL, space.GOAL, space.BLOCKED, space.ROWS, space.COLS);
+    animator = new AnimatorShader(space.INITIAL, space.GOAL, space.BLOCKED, space.ROWS, space.COLS, simulationStepTimeMillis);
     renderer = new RendererShader(space.ROWS, space.COLS, animator);
-    intervalId = setInterval(loop, 800);
     window.requestAnimationFrame(render);
   }  
   function idAstar() {
     document.querySelector("#startV1").setAttribute("disabled", "");
     document.querySelector("#startV2").setAttribute("disabled", "");
+    searchTime = 0;
     space = new GridSpace(9, 9);
     searchAlgorithm = new IDAstar(space.INITIAL, space.GOAL);
-    animator = new AnimatorShader(space.INITIAL, space.GOAL, space.BLOCKED, space.ROWS, space.COLS);
+    animator = new AnimatorShader(space.INITIAL, space.GOAL, space.BLOCKED, space.ROWS, space.COLS, simulationStepTimeMillis);
     renderer = new RendererShader(space.ROWS, space.COLS, animator);
-    intervalId = setInterval(loop, 800);
     window.requestAnimationFrame(render);
   }  
 </script>
